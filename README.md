@@ -1,0 +1,289 @@
+# Urban_Urbano_Prep
+Software de validador para camiones de transporte urbano para la empresa Urban de Tampico.
+
+**Autor: Ernesto Lomar**
+
+Linea cronológica:
+
+- v3.68:
+  - Ahora en la trama 6 digital ya no envia el estado al final de la trama (BOL,ERR,OK).
+  - Ahora la lectura de tarjetas y qr esta dividida en dos procesos diferentes en LeerTarjeta.py.
+  - Ahora los widgets en LeerTarjeta son mostrados desde el hilo principal para una mejor eficacia.
+  - Ahora se hace una verificacion de los campos obtenidos de la tarjeta con 'campo_invalido' para evitar 'IN' en csn, nombre, tipo y vigencia.
+  - Ahora se la trama de qr y nfc prepago trae como ultimo dato el tipo de transaccion (q, Q, f, F).
+  - Nueva matriz tarifaria con Id's 5,000.
+- v3.67:
+  - Se implemento en el archivo de prepago la funcionalidad de que no se muestren los mensajes de error en la pantalla de prepago y que no se cierre la ventana a menos que se pague el boleto con efectivo o se cancele el boleto.
+  - Nuevo diseño de la pantalla de prepago.
+- v3.66:
+  - Ahora ya se pueden ver los ultimos folios de venta digital y efectivo en la pantalla de corte.
+  - Se agregaron nuevos candados a la lectura de la tarjeta en los valores de nombre, tipo y vigencia cuando sea "IN".
+  - Se agrego una nueva mejora del .so donde se corrige el problema de que el nombre puede venir en "IN".
+  - Se optimizaron los tiempos del archivo de prepago y blinka para que el lector NFC pueda detectar celulares con mayor rapidez.
+- v3.65:
+  - Se modifico el archivo .so para que al consultar solo una funcion 'ev2PackInfo' se obtenga toda la informacion de la tarjeta.
+  - Se arreglo el bug de que las ventanas de prepago a veces no se abrian cuando se escogian muchas y que la lectura de tarjetas al cerrar el turno ya no funcionaba.
+- v3.64:
+  - Se modifico el archivo prepago.py y pn532_blinka_adapter.py para que el lector NFC pueda detectar celulares americanos.
+- v3.63:
+  - Se creo un hub_gpio.py para controlar el zumbador, ventilador y reset_reader.
+  - Se volvio a agregar la libreriaadafruit_pn532.
+- v3.62:
+  - Se volvio a lo que se tenia en la version 3.60.
+  - Se incorporo un nuevo archivo de prepago.py creado por Isais.
+- v3.61:
+  - Se cambio la libreria de prepago de pn532pi a adafruit_pn532.
+  - Se desactivo el uso de RPI.GPIO para el zumbador, ventilador y reset_reader.
+- v3.60:
+  - Se regreso al codigo de prepago.py de la version 3.58 con la implementacion del boton de cancelar transaccion.
+- v3.59:
+  - Se modifico la interfaz de corte, pasaje y prepago.
+  - Se agrego el boton de reset_reader en las ventanas de servicio.
+  - Se hizo mas robusto la conexion con el lector NFC en prepago.
+- v3.58:
+  - Se modifico la forma en como se ve el corte.
+  - Se inicializa el pin de RSTPDN_PIN en HIGH.
+  - Se paso de 5 HCE_REINTENTOS a 12.
+  - Ahora se envía el folio de venta en la trama de prepago.
+  - Se añadio un sleep de 1 segundo antes que suene el zumbador al finalizar la venta digital.
+  - Nueva versión de .so.
+- v3.57:
+  - Se implemento la funcionalidad de que al reiniciar el lector también se reinicie la instancia del PN532 en prepago.
+  - Se arreglo el bug de que cuando se le daba a "Pagar con Efecivo" la pantalla colapbasa.
+- v3.56:
+  - Se cambio el flujo de trabajo de LeerTarjeta y prepago.
+  - Se implemento un nuevo boton en la pantalla de inicio para reiniciar el Reader.
+- v3.55:
+  - Se implemento la venta digital por codigos QR.
+  - Se mejora el .so y el codigo de python de la detección de tarjetas para el problema de RX.
+- v3.54:
+  - Ahora se imprime un boleto para venta digital.
+  - Ahora no se frusta la venta de efectivo y digital cuando la impresión de boleto falla.
+  - Al momento de realizar el cobro de venta digital si no se detecta el pn532 se muestra un mensaje de error y se vuelve a la pantalla de servicios.
+  - Se implemento el reseteo del lector NFC por RSTPDN.
+  - Se eliminan las ventas digitales con mas de 15 dias de antiguedad.
+  - Se mofico la ventana de servicios, corte y cerrar turno.
+  - Ya no es necesario la impresora para vender boletos y cerrar viaje.
+- v3.53:
+  - Se implemento el envío 10 veces de la trama de datos hacia el celular.
+- v3.52:
+  - Se implemento todo el sistema de Prepago.
+- v2.51:
+  - Se implemento la nueva matriz tarifaria
+  - Hubo cambios en las geocercas.
+  - Se aniadieron nuevos servicios a la base de datos de servicios_pensiones.
+- v2.50:
+  - Se mejoro el FTP por Alejandro.
+- v2.49:
+  - Se corrigió la matriz tarifaría en el 109 de Km20 a Aviación de $16 a $14.
+- v2.48:
+  - Se corrigió la matriz tarifaría en el servicio 512 y 109.
+- v2.47:
+  - Se modifico la librería .so para corregir en error (nil) de los tags.
+- v2.46:
+  - Se agrego la nueva matriz tarifaría.
+- v2.45:
+  - Se añadió la funcionalidad de que la boletera pueda escoger el socket que le corresponde por el número de unidad que tiene asignado.
+- v2.44:
+  - Se corrigió bug de la actualización parcial de archivos en FTP
+  - Se añadió la base de datos asignación.db para que no ocurriera un bug en la creación de trama 4.
+- v2.43:
+  - Se mejoro la eliminación de archivos UFS.
+  - Se corrigió bug de bucle infinito en "Descargando archivo de azure".
+- v2.32:
+  - Que todas las tramas tengan [ en el inicio de la trama y ] en el final de la trama.
+  - Que las tramas 2, 4 y 5 respondan con el checksum calculado del contenido de la trama.
+  - Que las tramas 2, 4 y 5 verifiquen el checksum recibido del socket con el que se calculo en la boletera.
+  - Se quito la "D" de la función "realizar_accion".
+  - La boletera ahora solo toma como respuestas correctas del servidor las que contienen un SKT en la respuesta.
+  - La boletera ahora puede manejar estos errores ['ErIn', 'TrEm', 'ErTr', 'EmEr'] y vuelve a enviar la trama.
+  - La boletera ahora también toma en cuenta la hora de la tarjeta para validar la vigencia.
+  - Ahora la librería .so detecta cuando no se tiene conexión con el dispositivo NFC e intenta rehacer la conexión.
+  - La boletera ahora tiene la posibilidad de enviar tramas informativas acerca de mal uso de tarjetas y cuando se hizo un intento fallido de impresión de ticket.
+  - La boletera no se podrá actualizar por FTP en pleno viaje.
+  - La boletera no puede iniciar un viaje si existe uno en curso.
+  - Se acotaron los tiempos de la maquina de estado.
+  - Se quitaron los saltos de linea (\n) de la trama 9 (IDSIM y MAC).
+  - Se incluyo un candado en la función "mandar_datos" para que la basura que encuentra en el serial la pase de largo.
+  - Cuando se detecta que un viaje se esta tratando de iniciar y ya existe uno actual, muestra una ventana emergente avisando sobre este suceso.
+  - Aparece una ventana emergente de aviso cuando no se puede imprimir un ticket.
+  - Cuando se trata de generar una venta cuando no existe un viaje iniciado, manda un aviso por pantalla y cierra toda la sesión hasta regresar a la pantalla de camiones.
+  - La trama 4 incluye el monto total de las ventas realizadas en el viaje.
+  - Cuando la boletera no puede conectarse a su socket asignado, intenta conectarse al socket siguiente (si tiene el socket 8201, se intenta conectar al 8202, si tiene el 8210 intenta al 8201, etc). Y cuando ya pasaron varios intentos y sigue sin consolidar los datos en el servidor regresa a su socket asignado desde un principio y repite lo mismo si es que sigue sin consolidar el envió de datos.
+  - Se agregaron candados de seguridad para los datos de la trama 2, 4 y 5.
+  - Se modifico el tiempo de arranque de la boletera de 20s a 18s.
+  - La boletera ahora puede recibir una instrucción de CMD desde el servidor y ejecutarla.
+  - Se implemento una nueva base de datos llamada horarios.
+  - Ahora la boletera ya puede enviar tramas ACT cada media hora en el transcurso de todo el día.
+  - Se implemento la eliminación automática de tramas 9 que tienes 15 días o mas almacenadas en la DB.
+  - Se cambio el folio (contador) de los folio de viaje a 01.
+  - Se modifico la comunicación del FTP a AWS.
+- v1.31:
+  - Agregando la opción de que cuando inicie el sistema o se actualice se le otorguen permisos de administrador a todos los archivos.
+  - Se agregaron 3 intentos al momento de actualizar el sistema.
+  - Se agregó un candado para los 3 bytes de archivos al momento de la actualización por FTP.
+  - Se agrego una comparación de conexión con el servidor en la actualización FTP.
+  - Se agrego la opción de que se pueda imprimir en el ticket el empleado que inicio el viaje y el que lo cerro.
+  - Se reorganizo la estructura del ticket de corte en tres nuevas secciones, #General, #Inicio de viaje y #Fin de viaje.
+  - El folio auto incrementable del folio de viaje se cambio a 40. 
+  - En la ventana de corte se quito la opción de que se viera la vigencia de la tarjeta.
+  - Se cambio la manera en la que se guarda la hora en la trama 2.
+  - Se agregaron dos nuevas tramas 9, #ElegirServicio y #DentroServicio.
+- v1.30:
+  - Arreglando bug de que a todas las auto_asignaciones se les coloca el mismo folio de viaje.
+  - Agregando la fecha como parámetro a la funcion *aniadir_folio_de_viaje_a_auto_asignacion*.
+  - Arreglando bug de que no se puede cerrar el viaje, por problemas de impresión de ticket.
+  - Modificando ventana de *FUERADEVIGENCIA* a *TARJETAINVALIDA* cuando la vigencia de la tarjeta no corresponde con los parámetros esperados.
+  - Agregando mejoras de código en el archivo *impresora.py* y *corte.py*.
+  - Arreglando bug de doble UID vació, cuando se apaga la boletera en la ventana de Chofer y cuando se inicia nuevamente la boletera el UID se pasa a vació. lo que ocasiona la doble coma en la trama 2.
+  - En inicio.py se agrego la opción de que cuando se inicie el sistema en la ventana de chofer el valor del UID guardado en el .ini se guarde en variables globales.
+- v1.29:
+  - Arreglando bug de que se imprimen los folios incorrectos.
+- v1.28:
+  - Quitando servicios 673 y 674 de la pension de Haciendas.
+- v1.27:
+  - Arreglando bug de la comparación de fechas en el primer día del mes.
+- v1.26:
+  - Correcciones de matriz tarifaría.
+  - Actualización de base de datos *operadores*.
+- v1.25:
+  - Actualizando geocercas de *Monte Alto_1*, *La Morita_3*, *Independencia_1* y *Electricistas_1*.
+- v1.24:
+  - Añadiendo control de brillo en la pantalla desde el menu principal.
+- v1.23:
+  - Quitando el reinicio de los folios.
+  - Añadiendo la opción de que el viaje se cierre de manera automática a las 2AM.
+  - Cambiando el tiempo de envió de las tramas. De 30 segundos a 20 segundos para tramas 2,5 y 4. Y de 1 minuto a 30 segundos para la trama 3.
+  - Se modifico la impresión de la fecha de inicio de viaje en el ticket y fin de viaje.
+  - Actualizando librería .so para la opción de leer el nombre de operador de la tarjeta.
+  - Agregando un candado de seguridad al momento de crear la trama 2 (inicio de viaje) para asegurar que el campo del CSN no se envié vació.
+  - Se agrego un candado de seguridad en el folio auto incrementable del folio de viaje para asegurarse que se incremente.
+  - Se agrego una nueva tabla llamada *boletera* y *memoria* donde próximamente se guardaran datos utilizados para futuras tramas.
+  - Se quito "Vuelta" en la impresión del ticket.
+  - Se quitaron renglones en el ticket.
+  - Se agrego un candado de seguridad para cuando no se encuentre el numero de operador en la tarjeta se busque en la base de datos interna de operadores y ese dato sea el que se muestre en el ticket.
+  - Se agrego un nuevo dato en el ticket llamado *"Ultimo folio"*
+- v1.22:
+  - Añadiendo lectura de número de operador de la tarjeta.
+- v1.21:
+  - Añadiendo la impresión de un nuevo ticket al cerrar el corte del viaje, para que ahora sean 3 impresiones de copias y cada una tendrá su respectivo nombre de a quien va dirigido (Jefe pensión, liquidación y operador).
+  - Poniendo candado en el conteo de *total_de_folios* y *cantidad_a_liquidar* en la impresión de los tickets al cerrar el corte.
+  - Añadiendo try-catch estratégicos en el inicio del sistema.
+  - Hacemos la suma total del costo de las ventas realizadas en el viaje desde la base de datos.
+  - Cambiamos la condición de si el UID esta vació de '== ""' a 'len() == 0'.
+- v1.20:
+  - Solucionando problema de la lectura de tickets de la base de datos.
+- v1.19:
+  - Agregando la eliminación de datos antiguos que sobrepasan los 15 días.
+- v1.18:
+  - Agregando inicio de sesión del GPS cuando no se obtienen coordenadas.
+- v1.17:
+  - Añadiendo la opción de poder hacer la actualización de software mediante 2 servidores con FTP.
+  - Haciendo que cuando comience el software se enciende el GPS con *AT+QGPS=1*.
+  - Corrigiendo bug de cuando no se hace ninguna venta.
+- v1.16:
+  - Agregando candado de seguridad en el CSN al crear la trama 2.
+  - Quitando enters.
+  - Quitando caracteres de tarjetas leídas.
+  - Agregando candado de seguridad al crear trama 4.
+  - Nueva comunicación con servidor de Azure.
+- v1.15:
+  - Modificando estructura de la función *handle_ok* cuando se inicia un viaje.
+  - Añadiendo candado de seguridad del conteo de boletos registrados en la base de datos, los que se llevan en conteo y del folio de la ultima venta realizada.
+  - Quitando botón de apagar raspberry de la ventana de chofer.
+  - Quitando valor por defecto en la selección de pensión.
+  - Añadiendo candado de verificación de si hay un fin de viaje por enviar al servidor antes de enviar un comienzo de viaje.
+  - Agregando candados de seguridad al obtener el CSN.
+  - Agregando candados de seguridad del CSN al crear trama 2.
+  - Agregando candado de seguridad en la creación del folio de viaje.
+  - Mejorando el envío de datos cronológicamente.
+  - Cambiando nombres de variables para evitar la concatenación de datos.
+  - Actualizando funciones del letrero de la ventana principal de *datos pendientes por enviar*
+- v1.14:
+  - Modificando la comparación de vigencias de tarjeta y actual a solo fechas.
+- v1.13:
+  - Agregando la detección de vigencia de las tarjetas al software.
+  - Cambiando el inicio de folio a 60.
+  - Poniendo el label del socket de la ventana principal en la cintilla.
+  - Añadiendo nueva opción de *"Fuera de vigencia"* a las ventanas emergentes.
+- v1.12:
+  - Agregando opción en la base de datos para que se pueda iniciar el viaje desde un folio especifico.
+  - Agregando nuevas bases de datos de matrices tarifarías y servicios.
+  - Agregando nuevo letrero en la ventana principal de camiones que se mostrara por si llegara a faltar enviar un dato al servidor.
+  - Quitando variable "en_viaje".
+  - Modificando diseño de las ventanas inicio y enviar vuelta.
+  - Quitando la opción de que no dejaba cerrar turno hasta que se enviaran todos los datos al servidor.
+  - Añadiendo en la ventana principal el número de socket.
+  - Corrigiendo error de *"por_aniadir"*.
+- v1.11:
+  - Corrección de diseño de *enviar_vuelta*.
+  - Arreglando glitch de cuando se cierra la ventana de chofer al no encontrar un servicio no se puede volver a meter a la misma.
+- v1.10:
+  - Agregando nuevas bases de datos, con nuevas matrices tarifarías, servicios, etc.
+  - Nueva base de datos operadores.py.
+  - Modificando diseño de ventana *enviar_vuelta*.
+  - Añadiendo nombre y numero de empleado de operador en ticket de liquidación.
+  - Solucionando espacio vació del UID.
+  - Agregando parche para que no se dupliquen folios de ventas y no se sobrescriban en el servidor.
+- v1.9:
+  - Cambiando el numero de versión a variables globales.
+  - Modificando query de la consulta de ventas de la petición "D".
+  - Modificando las acciones de las peticiones del servidor.
+  - Modificando estructura de la lectura de QR.
+  - Modificando diseño de ventanas.
+  - Añadiendo folio de viaje, folio de liquidación y versión del software a ticket de liquidación.
+  - Modificando software para que no deje cerrar turno del operador hasta que se envíen todos los datos al servidor.
+  - Arreglando bug de que el hilo de "enviar_vuelta" no se restablece al volver al restablecer la raspberry después de haber sido apagada.
+  - Añadiendo nueva variable "en_viaje".
+- v1.8:
+  - Haciendo modificaciones en puertoSocket e idUnidad.
+  - Modificando scrips de bases de datos.
+  - Arreglando bug de que se truena el programa al darle doble click en el botón de terminar vuelta.
+  - Agregando opción para que no se abran ventanas innecesarias.
+- v1.7:
+  - Mejorando la detección de la hora por SIM y GPS.
+  - Modificando scripts de bases de datos.
+  - Haciendo modificaciones en puertoSocket e idUnidad.
+  - Agregando nuevas bases de datos
+- v1.6:
+  - Añadiendo verificación del tamaño del archivo que llega por FTP.
+  - Añadiendo nuevo archivo "verificar_carpeta" para la detección de Urban_Urbano.
+  - Mejorando la auto-actualización por FTP.
+  - Modificando la lectura de transbordos.
+  - Cambiando distancia minima de 0.004 a 0.003.
+  - Creando nueva base de datos para los tickets usados.
+  - Optimizando lectura en bases de datos.
+  - Creando nuevo archivo "impresora.py" donde se concentra toda la impresión de tickets.
+  - Modificando los archivos donde se imprimen tickets para que utilicen el archivo *impresora.py*
+  - Añadiendo nueva base de datos.
+  - Modificando el tamaño de las ventanas para que abarquen todo el espacio de la pantalla.
+- v1.5:
+  - Cambiando los tipo de hilos de la detección de geocercas y validación de datos de *threading* a *QThread*.
+  - Corrigiendo la impresión de tickets de transbordo.
+  - Haciendo más robusto el envío de datos por TCP/IP al servidor.
+  - Añadiendo respuestas de las peticiones del servidor para el reenvió de datos.
+  - Modificando trama 3 (envío de GNSS) para cuando no haya un viaje iniciado, se mande un 99 en el contador de folio de viaje, para así no perder coordenadas GNSS de una unidad a pesar de que no tenga folio de viaje asociado.
+  - Añadiendo más información de retroalimentación al log.
+  - Cambiando la reconexión al servidor cuando falla el envío de datos para que ahora solo al intento fallido 4 cierre y abra el socket y al intento 6 reinicie el módem Quectel.
+  - Modificaciones del FrontEnd
+- v1.4:
+  - Haciendo que suene el zumbador al momento de que suceda cualquier error.
+  - Priorizando el reinicio del Quectel al acumular muchos intentos fallidos de envíos de datos al servidor.
+  - Cambiando diseño.
+  - Mejorando condicional de conteo de datos enviados en la interfaz enviar_vuelta.
+- v1.3:
+  - Mejorando restablecimiento de la conexión del QR.
+  - Añadiendo nuevo campo a la base de datos aforo.db donde se guardara el puerto del socket y así sera mas accesible para cambiarlo.
+  - Mejorando el diseño de la ventana enviar_vuelta.
+  - Optimizando el envió de datos a pesar de no contar con coordenadas GPS.
+  - Optimizando la conexión de la impresora para la impresión de tickets.
+- v1.2:
+    - Mejorando la restauración de ventanas y datos por si llegara a ocurrir que el sistema se detenga de la nada cuando no debe.
+- v1.1:
+    - Mejorando la detección de geocercas.
+    - Añadiendo lectura de códigos QR.
+    - Optimizando código para una mayor eficiencia.
+    - Añadiendo más opciones de ventanas emergentes.
+    - Arreglando bugs y glitches generales que podrían afectar en lo proximo.
+- v1.0:
+    Sistema funcional para la venta de pasajes en transporte urbano, impresión de tickets con/sin QR, envió de datos mediante TCP/IP, auto actualizable mediante FTP y detección de geocercas.
