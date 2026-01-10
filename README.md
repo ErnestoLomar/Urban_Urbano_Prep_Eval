@@ -5,9 +5,13 @@ Software de validador para camiones de transporte urbano para la empresa Urban d
 
 Linea cronológica:
 
-- 3.70Eval:
+- 3.72Eval:
   - "Ahora se detecta la impresora china y Epson."
-- 3.69:
+- v3.71:
+  - Se solucionó la colisión del PN532 haciendo que tarjetas y HCE nunca lo usen al mismo tiempo: todo acceso quedó protegido con un lock único, el cierre/reset se hace de forma coordinada (sin forzar flags desde la UI) y el pin RST quedó controlado por una sola ruta (GPIOHub).
+- v3.70:
+  - Se incluyo la Q y F en tipo de pago.
+- v3.69:
   - Se añadió el reseteo de las variables de corte, ya que visualmente salían mal.
 - v3.68:
   - Ahora en la trama 6 digital ya no envia el estado al final de la trama (BOL,ERR,OK).
