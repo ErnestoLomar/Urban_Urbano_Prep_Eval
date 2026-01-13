@@ -5,7 +5,9 @@ Software de validador para camiones de transporte urbano para la empresa Urban d
 
 Linea cronológica:
 
-- 3.72Eval:
+- v3.73:
+  - Se corrigió el bug de los botones de reinicio en inicio y servicios.
+- v3.72:
   - "Ahora se detecta la impresora china y Epson."
 - v3.71:
   - Se solucionó la colisión del PN532 haciendo que tarjetas y HCE nunca lo usen al mismo tiempo: todo acceso quedó protegido con un lock único, el cierre/reset se hace de forma coordinada (sin forzar flags desde la UI) y el pin RST quedó controlado por una sola ruta (GPIOHub).
