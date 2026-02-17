@@ -37,6 +37,7 @@ version_de_MT = "202305180001"
 fecha_actual = ""
 hora_actual = ""
 fecha_completa_actual = ""
+numero_unidad_incorrecto = False
 
 # Modo NFC:
 # True  -> modo "Card": lectura tarjetas (lib C)

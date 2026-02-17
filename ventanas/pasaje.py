@@ -22,12 +22,14 @@ import subprocess
 sys.path.insert(1, '/home/pi/Urban_Urbano/db')
 
 # Hub GPIO (BCM)
-try:
-    from gpio_hub import GPIOHub, PINMAP
-    HUB = GPIOHub(PINMAP)
-except Exception as _hub_err:
-    HUB = None
-    logging.warning(f"No se pudo inicializar GPIOHub en pasaje.py: {_hub_err}")
+# try:
+#    from gpio_hub import GPIOHub, PINMAP
+#    HUB = GPIOHub(PINMAP)
+#except Exception as _hub_err:
+#    HUB = None
+#    logging.warning(f"No se pudo inicializar GPIOHub en pasaje.py: {_hub_err}")
+
+from hw import HUB
 
 # Librerías propias
 from ventas_queries import insertar_venta, insertar_item_venta, obtener_ultimo_folio_de_item_venta
@@ -162,7 +164,7 @@ class Pasajero:
 
 class VentanaPasaje(QWidget):
     def __init__(self, precio, de: str, hacia: str, precio_preferente, close_signal,
-                 servicio_o_transbordo: str, id_tabla, ruta, tramo, cerrar_ventana_servicios):
+                servicio_o_transbordo: str, id_tabla, ruta, tramo, cerrar_ventana_servicios):
         super().__init__()
         try:
             uic.loadUi("/home/pi/Urban_Urbano/ui/pasaje.ui", self)
@@ -410,7 +412,7 @@ class VentanaPasaje(QWidget):
                             "BMI", f"S{tipo[0]}"
                         )
                         logging.info("Error al imprimir boleto")
-                        self.ve = VentanaEmergente("IMPRESORA", "", 4.5)
+                        self.ve = VentanaEmergente("NO_IMPRESION", "", 6)
                         self.ve.show()
 
             # crea overlay solo si habrá cobros digitales
@@ -505,7 +507,7 @@ class VentanaPasaje(QWidget):
                                     str(self.Unidad), fecha_estadistica, hora_estadistica,
                                     "BMI", f"{'S' if servicio=='SER' else 'T'}{tipo[0]}"
                                 )
-                                self.ve = VentanaEmergente("IMPRESORA", "", 4.5)
+                                self.ve = VentanaEmergente("NO_IMPRESION", "", 6)
                                 self.ve.show()
 
                             cobrados_hce += 1

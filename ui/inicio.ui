@@ -262,17 +262,17 @@ color: rgb(255, 255, 255);</string>
   <widget class="QLabel" name="label_off">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>40</y>
-     <width>40</width>
-     <height>40</height>
+     <x>0</x>
+     <y>380</y>
+     <width>51</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="text">
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>../Imagenes/apagar.png</pixmap>
+    <pixmap>../Imagenes/apagar_sf.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -357,8 +357,8 @@ background-color: rgb(206, 206, 206);</string>
   <widget class="QScrollBar" name="Brillo">
    <property name="geometry">
     <rect>
-     <x>220</x>
-     <y>20</y>
+     <x>270</x>
+     <y>380</y>
      <width>241</width>
      <height>61</height>
     </rect>
@@ -396,10 +396,10 @@ QScrollBar::handle:horizontal:pressed {
   <widget class="QLabel" name="reset_nfc">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>40</y>
-     <width>41</width>
-     <height>41</height>
+     <x>750</x>
+     <y>380</y>
+     <width>51</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="text">
@@ -410,6 +410,39 @@ QScrollBar::handle:horizontal:pressed {
    </property>
    <property name="scaledContents">
     <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_aviso_unidad">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>120</y>
+     <width>781</width>
+     <height>261</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">/* Pega esto en el StyleSheet del QLabel (en Qt Designer)
+   Asegúrate que el objectName del label sea: label_aviso_unidad */
+
+QLabel#label_aviso_unidad {
+    background-color: rgba(255, 255, 255, 230);   /* blanco translúcido */
+    color: #B42318;                                /* rojo moderno */
+    border: 1px solid #FDA29B;                     /* borde suave */
+    border-left: 7px solid #F04438;                /* acento tipo “banner” */
+    border-radius: 14px;                           /* esquinas redondeadas */
+    padding: 12px 16px;
+    font-size: 30pt;
+    font-weight: 600;
+}
+
+QLabel#label_aviso_unidad {
+    qproperty-alignment: 'AlignVCenter | AlignHCenter';
+}
+</string>
+   </property>
+   <property name="text">
+    <string>Número de unidad inválido: '{num_unidad}'. Debe ser exactamente 5 dígitos numéricos.</string>
    </property>
   </widget>
  </widget>

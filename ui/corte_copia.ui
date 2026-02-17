@@ -732,7 +732,7 @@ color: rgb(12, 49, 112);</string>
     <property name="styleSheet">
      <string notr="true">border: 0;
 font: 14pt &quot;Roboto&quot;;
-color: rgb(48, 110, 188);</string>
+color: rgb(11, 41, 92);</string>
     </property>
     <property name="text">
      <string>Total:</string>
@@ -750,7 +750,7 @@ color: rgb(48, 110, 188);</string>
     <property name="styleSheet">
      <string notr="true">border: 0;
 font: 14pt &quot;Roboto&quot;;
-color: rgb(48, 110, 188);</string>
+color: rgb(11, 41, 92);</string>
     </property>
     <property name="text">
      <string>21</string>
@@ -768,7 +768,7 @@ color: rgb(48, 110, 188);</string>
     <property name="styleSheet">
      <string notr="true">border: 0;
 font: 14pt &quot;Roboto&quot;;
-color: rgb(48, 110, 188);</string>
+color: rgb(11, 41, 92);</string>
     </property>
     <property name="text">
      <string>21</string>
@@ -786,7 +786,7 @@ color: rgb(48, 110, 188);</string>
     <property name="styleSheet">
      <string notr="true">border: 0;
 font: 14pt &quot;Roboto&quot;;
-color: rgb(48, 110, 188);</string>
+color: rgb(11, 41, 92);</string>
     </property>
     <property name="frameShadow">
      <enum>QFrame::Plain</enum>
@@ -813,7 +813,7 @@ color: rgb(48, 110, 188);</string>
     <property name="styleSheet">
      <string notr="true">border: 0;
 font: 14pt &quot;Roboto&quot;;
-color: rgb(48, 110, 188);</string>
+color: rgb(11, 41, 92);</string>
     </property>
     <property name="frameShadow">
      <enum>QFrame::Plain</enum>

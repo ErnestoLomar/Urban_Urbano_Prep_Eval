@@ -92,7 +92,7 @@
    <property name="geometry">
     <rect>
      <x>690</x>
-     <y>10</y>
+     <y>420</y>
      <width>101</width>
      <height>51</height>
     </rect>
@@ -236,8 +236,8 @@ background-color: rgb(240,240,240);</string>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 75 16pt &quot;Arial&quot;;
-color: rgb(150,150, 150);</string>
+    <string notr="true">font: 18pt &quot;Roboto&quot;;
+color: rgb(20, 08, 255);</string>
    </property>
    <property name="text">
     <string>Pasajes: 0</string>
@@ -253,8 +253,8 @@ color: rgb(150,150, 150);</string>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 75 16pt &quot;Arial&quot;;
-color: rgb(150,150, 150);</string>
+    <string notr="true">font: 18pt &quot;Roboto&quot;;
+color: rgb(20, 08, 255);</string>
    </property>
    <property name="text">
     <string>Total: $0</string>
@@ -1067,8 +1067,8 @@ background-color: rgb(240,240,240);</string>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 75 16pt &quot;Arial&quot;;
-color: rgb(150,150, 150);</string>
+    <string notr="true">font: 18pt &quot;Roboto&quot;;
+color: rgb(20, 08, 255);</string>
    </property>
    <property name="text">
     <string>Efectivo: $0</string>
@@ -1084,8 +1084,8 @@ color: rgb(150,150, 150);</string>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 75 16pt &quot;Arial&quot;;
-color: rgb(150,150, 150);</string>
+    <string notr="true">font: 18pt &quot;Roboto&quot;;
+color: rgb(20, 08, 255);</string>
    </property>
    <property name="text">
     <string>Digital: $0</string>
@@ -1108,7 +1108,7 @@ color: rgb(150,150, 150);</string>
    <property name="geometry">
     <rect>
      <x>720</x>
-     <y>20</y>
+     <y>430</y>
      <width>71</width>
      <height>31</height>
     </rect>
@@ -1131,7 +1131,7 @@ color: rgb(150,150, 150);</string>
    </property>
    <property name="styleSheet">
     <string notr="true">font: 18pt &quot;Roboto&quot;;
-color: rgb(150,150, 150);</string>
+color: rgb(20, 08, 255);</string>
    </property>
    <property name="text">
     <string>P.N: $10</string>
@@ -1148,7 +1148,7 @@ color: rgb(150,150, 150);</string>
    </property>
    <property name="styleSheet">
     <string notr="true">font: 18pt &quot;Roboto&quot;;
-color: rgb(150,150, 150);</string>
+color: rgb(20, 08, 255);</string>
    </property>
    <property name="text">
     <string>P.P: $10</string>

@@ -60,6 +60,10 @@ class VentanaEmergente(QWidget):
             elif tipo_imagen == "IMPRESORA":
                 self.label_fondo.setPixmap(QPixmap("/home/pi/Urban_Urbano/Imagenes/problema_impresora.png"))
                 self.label_texto.setText(str(parametro))
+            
+            elif tipo_imagen == "NO_IMPRESION":
+                self.label_fondo.setPixmap(QPixmap("/home/pi/Urban_Urbano/Imagenes/error_impresora.png"))
+                self.label_texto.setText(str(parametro))
 
             elif tipo_imagen == "TARJETAINVALIDA":
                 self.label_fondo.setPixmap(QPixmap("/home/pi/Urban_Urbano/Imagenes/001.jpg"))

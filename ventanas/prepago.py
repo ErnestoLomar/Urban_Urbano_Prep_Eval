@@ -23,6 +23,8 @@ from pn532_blinka_adapter import Pn532Blinka
 
 import variables_globales as vg
 
+# Asegura acceso a /utils
+sys.path.insert(1, '/home/pi/Urban_Urbano/utils')
 sys.path.insert(1, '/home/pi/Urban_Urbano/db')
 from ventas_queries import (
     guardar_venta_digital,
@@ -45,13 +47,16 @@ ch = logging.StreamHandler(sys.stdout); ch.setLevel(logging.INFO); ch.setFormatt
 if not logger.handlers:
     logger.addHandler(fh); logger.addHandler(ch)
 
-try:
-    from gpio_hub import GPIOHub, PINMAP
-    HUB = GPIOHub(PINMAP)
-    logger.info("GPIOHub inicializado para buzzer/reset.")
-except Exception as e:
-    HUB = None
-    logger.warning(f"No se pudo inicializar GPIOHub: {e}")
+# try:
+#     from gpio_hub import GPIOHub, PINMAP
+#     HUB = GPIOHub(PINMAP)
+#     logger.info("GPIOHub inicializado para buzzer/reset.")
+# except Exception as e:
+#     HUB = None
+#     logger.warning(f"No se pudo inicializar GPIOHub: {e}")
+
+# Hub compartido (singleton)
+from hw import HUB
 
 SETTINGS_PATH = "/home/pi/Urban_Urbano/ventanas/settings.ini"
 UI_PATH = "/home/pi/Urban_Urbano/ui/prepago.ui"
@@ -114,7 +119,7 @@ class HCEWorker(QThread):
         """
         try:
             if not self.nfc:
-                self.nfc = Pn532Blinka(cs_pin=board.CE0)
+                self.nfc = Pn532Blinka(cs_pin=board.CE0, rst_pin=None)
 
             # begin() en tu adapter es no-op, pero lo dejamos por consistencia
             self.nfc.begin()
@@ -135,7 +140,7 @@ class HCEWorker(QThread):
             self.nfc = None
 
             try:
-                self.nfc = Pn532Blinka(cs_pin=board.CE0)
+                self.nfc = Pn532Blinka(cs_pin=board.CE0, rst_pin=None)
                 self.nfc.begin()
                 _ = self.nfc.getFirmwareVersion()
                 self.nfc.SAMConfig()
@@ -160,7 +165,7 @@ class HCEWorker(QThread):
 
         while self.running:
             try:
-                self.nfc = Pn532Blinka(cs_pin=board.CE0)
+                self.nfc = Pn532Blinka(cs_pin=board.CE0, rst_pin=None)
             except Exception as e:
                 self.error_inicializacion.emit(f"No se pudo abrir PN532: {e}. Reintentando…")
                 time.sleep(backoff)
@@ -334,6 +339,9 @@ class HCEWorker(QThread):
     def run(self):
         if not self.running:
             return
+        
+        vg.modo_nfcCard = False
+        vg.wait_nfc_closed_for_hce(timeout=1.2)
 
         # Dueño exclusivo del PN532 durante todo el HCE
         if not vg.pn532_acquire("HCE", timeout=3.0):

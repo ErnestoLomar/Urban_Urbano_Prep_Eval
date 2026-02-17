@@ -27,7 +27,7 @@ sys.path.insert(1, '/home/pi/Urban_Urbano/minicom')
 sys.path.insert(1, '/home/pi/Urban_Urbano/qworkers')
 
 # Hub GPIO (BCM)
-from gpio_hub import GPIOHub, PINMAP
+# from gpio_hub import GPIOHub, PINMAP
 
 # Librerías propias
 from chofer import VentanaChofer
@@ -48,13 +48,6 @@ from queries import (
 )
 from enviar_vuelta import EnviarVuelta
 from emergentes import VentanaEmergente  # para mostrar mensajes desde hilos
-
-# Instancia global del HUB
-try:
-    HUB = GPIOHub(PINMAP)
-    print("GPIOHub inicializado.")
-except Exception as e:
-    print("Error al inicializar GPIOHub: " + str(e))
 
 # Carpeta de logs
 if not os.path.exists("/home/pi/Urban_Urbano/logs"):
@@ -92,20 +85,8 @@ class Ventana(QWidget):
             self.setWindowFlags(Qt.FramelessWindowHint)
             uic.loadUi("/home/pi/Urban_Urbano/ui/inicio.ui", self)
             self.settings = QSettings('/home/pi/Urban_Urbano/ventanas/settings.ini', QSettings.IniFormat)  # Cfg
+            self._setup_nfc_loading_overlay()
             crear_tablas()  # DB tables
-            self.unidad = obtener_datos_aforo()
-            try:
-                self.label_unidad.setText(str(self.unidad[1]))
-                self.label_socket.setText(str(self.unidad[2]))
-            except Exception as e:
-                logging.info('No se pudo cargar el aforo, lo añadimos manualmente')
-                insertar_aforo(1, 21000, 8150, 0.0, False, 0.0)
-                self.label_unidad.setText(str(self.unidad[1]))
-            self.label_ser_pc.hide()
-            self.label_5.hide()
-            self.label_datos_info.hide()
-            self.label_datos_cantidad.hide()
-            self.label_version_software.setText(variables_globales.version_del_software)
 
             # Variables
             self.registrar_usuario = any
@@ -114,6 +95,48 @@ class Ventana(QWidget):
 
             # Referencias a ventanas emergentes para que no las destruya el GC
             self._emergentes = []
+
+            # Configurar label persistente de aviso (DEBE existir en el .ui con objectName: label_aviso_unidad)
+            self._setup_label_aviso_unidad()
+
+            # Cargar aforo / unidad
+            self.unidad = obtener_datos_aforo()
+
+            # Si no hay aforo/datos, lo añadimos y recargamos
+            # if not self.unidad:
+            #     logging.info('No se pudo cargar el aforo, lo añadimos manualmente')
+            #     insertar_aforo(1, 21000, 8150, 0.0, False, 0.0)
+            #     self.unidad = obtener_datos_aforo()
+
+            # Tomamos valores con seguridad
+            num_unidad = None
+            socket_unidad = None
+            try:
+                num_unidad = self.unidad[1]
+                socket_unidad = self.unidad[2]
+            except Exception:
+                pass
+
+            # Validación: 5 dígitos numéricos
+            if not self.validar_unidad_5_digitos(num_unidad):
+                variables_globales.numero_unidad_incorrecto = True
+                aviso = f"Número económico inválido: '{num_unidad}'.\n Deben ser exactamente 5 dígitos."
+                logging.warning(aviso)
+                self.mostrar_aviso_unidad(aviso)   # <-- label persistente
+            else:
+                self.ocultar_aviso_unidad()
+
+            # Set de labels (aunque sea inválido, lo mostramos tal cual para diagnóstico)
+            if num_unidad is not None:
+                self.label_unidad.setText(str(num_unidad))
+            if socket_unidad is not None:
+                self.label_socket.setText(str(socket_unidad))
+
+            self.label_ser_pc.hide()
+            self.label_5.hide()
+            self.label_datos_info.hide()
+            self.label_datos_cantidad.hide()
+            self.label_version_software.setText(variables_globales.version_del_software)
 
             # Número de serie y versión de tablilla
             respuesta = cargar_num_serie()
@@ -143,6 +166,112 @@ class Ventana(QWidget):
             logging.info("Error al iniciar la ventana principal: " + str(e))
             print("Error al iniciar la ventana principal: " + str(e))
 
+    def _setup_nfc_loading_overlay(self):
+        # Overlay semitransparente
+        self.nfc_overlay = QWidget(self)
+        self.nfc_overlay.setGeometry(0, 0, 800, 480)
+        self.nfc_overlay.setStyleSheet("background-color: rgba(0,0,0,120);")
+        self.nfc_overlay.hide()
+
+        # Caja central
+        box = QWidget(self.nfc_overlay)
+        box.setFixedSize(420, 180)
+        box.move((800 - 420)//2, (480 - 180)//2)
+        box.setStyleSheet("""
+            background-color: rgba(255,255,255,245);
+            border-radius: 18px;
+        """)
+
+        lbl = QLabel("Leyendo tarjeta...", box)
+        lbl.setAlignment(Qt.AlignCenter)
+        lbl.setGeometry(20, 25, 380, 50)
+        lbl.setStyleSheet("font-size: 28px; font-weight: 700; color: #101828;")
+
+        self.nfc_bar = QProgressBar(box)
+        self.nfc_bar.setGeometry(35, 95, 350, 28)
+        self.nfc_bar.setRange(0, 0)  # indefinido (busy)
+        self.nfc_bar.setTextVisible(False)
+        self.nfc_bar.setStyleSheet("""
+            QProgressBar { border: 1px solid #D0D5DD; border-radius: 10px; background: #F2F4F7; }
+            QProgressBar::chunk { border-radius: 10px; background: #2E90FA; }
+        """)
+
+        # Para evitar parpadeo: mínimo visible X ms
+        self._nfc_loading_min_ms = 180
+        self._nfc_loading_started_ms = 0
+        self._nfc_hide_timer = QTimer(self)
+        self._nfc_hide_timer.setSingleShot(True)
+        self._nfc_hide_timer.timeout.connect(self.nfc_overlay.hide)
+
+    @pyqtSlot(bool)
+    def set_nfc_loading(self, on: bool):
+        if on:
+            self._nfc_hide_timer.stop()
+            self._nfc_loading_started_ms = int(time.time() * 1000)
+            self.nfc_overlay.show()
+            self.nfc_overlay.raise_()
+        else:
+            elapsed = int(time.time() * 1000) - self._nfc_loading_started_ms
+            remain = self._nfc_loading_min_ms - elapsed
+            if remain > 0:
+                self._nfc_hide_timer.start(remain)
+            else:
+                self.nfc_overlay.hide()
+
+    # ---------- AVISO PERSISTENTE EN UI (LABEL) ----------
+    def _setup_label_aviso_unidad(self):
+        """
+        Requiere que en el .ui exista un QLabel con objectName: label_aviso_unidad
+        (si no existe, no truena; simplemente no muestra nada).
+        """
+        if not hasattr(self, "label_aviso_unidad"):
+            return
+
+        # Estilo moderno (puedes dejarlo en Designer y quitar esto si prefieres)
+        self.label_aviso_unidad.setStyleSheet("""
+            QLabel#label_aviso_unidad {
+                background-color: rgba(255, 255, 255, 230);
+                color: #B42318;
+                border: 1px solid #FDA29B;
+                border-left: 7px solid #F04438;
+                border-radius: 14px;
+                padding: 12px 16px;
+                font-size: 30px;
+                font-weight: 600;
+            }
+        """)
+        self.label_aviso_unidad.setWordWrap(True)
+        self.label_aviso_unidad.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
+
+        # Sombra (opcional)
+        try:
+            shadow = QGraphicsDropShadowEffect(self)
+            shadow.setBlurRadius(24)
+            shadow.setOffset(0, 6)
+            shadow.setColor(QColor(16, 24, 40, 90))
+            self.label_aviso_unidad.setGraphicsEffect(shadow)
+        except Exception:
+            pass
+
+        self.label_aviso_unidad.hide()
+
+    def mostrar_aviso_unidad(self, mensaje: str):
+        if not hasattr(self, "label_aviso_unidad"):
+            return
+        self.label_aviso_unidad.setText(mensaje)
+        self.label_aviso_unidad.show()
+        self.label_aviso_unidad.raise_()
+
+    def ocultar_aviso_unidad(self):
+        if not hasattr(self, "label_aviso_unidad"):
+            return
+        self.label_aviso_unidad.hide()
+
+    def validar_unidad_5_digitos(self, valor) -> bool:
+        s = "" if valor is None else str(valor).strip()
+        return len(s) == 5 and s.isdigit()
+    # ----------------------------------------------------
+
     def configuracionInicial(self):
         try:
             vuelta = self.settings.value('vuelta')
@@ -166,6 +295,7 @@ class Ventana(QWidget):
             hora = str(fecha_actual[(int(indice) - 2):(int(indice) + 6)]).replace(":", "")
 
             if ventana_actual is not None and ventana_actual != str(""):
+
                 if self.isVisible() == False:
                     print("La ventana principal no está visible")
                     self.setVisible(True)
@@ -341,6 +471,7 @@ class Ventana(QWidget):
             self.worker.finished.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
             self.worker.progress.connect(self.reportProgressTarjeta)
+            self.worker.leyendo_tarjeta.connect(self.set_nfc_loading, Qt.QueuedConnection)
             # emergentes desde hilos NFC/QR
             self.worker.mensaje.connect(self.mostrarEmergente)
             self.thread.start()
@@ -351,12 +482,11 @@ class Ventana(QWidget):
     def mostrarEmergente(self, titulo: str, mensaje: str, duracion: float):
         """Muestra VentanaEmergente desde el hilo principal, usando 'duracion'."""
         try:
-            # pasamos la duración al constructor
+            self.set_nfc_loading(False)
             gui = VentanaEmergente(titulo, mensaje, duracion)
             gui.show()
             self._emergentes.append(gui)
 
-            # cuando la ventana se destruya, la quitamos de la lista
             def _on_destroyed(*args, **kwargs):
                 try:
                     self._emergentes.remove(gui)
@@ -370,10 +500,9 @@ class Ventana(QWidget):
 
     # leer la tarjeta
     def reportProgressTarjeta(self, result):
-        try:
-            # Si el resultado es una lista y la lista no está vacía, abra la ventana
+        try: 
+            self.set_nfc_loading(False)
             if len(result) == 14:
-                # Abrir ventana chofer
                 if self.settings.value('csn_chofer') == "":
                     variables_globales.csn_chofer = result
                     self.settings.setValue('csn_chofer', result)
@@ -381,16 +510,15 @@ class Ventana(QWidget):
                     if self.settings.value('csn_chofer') != result:
                         variables_globales.csn_chofer = result
                         self.settings.setValue('csn_chofer_dos', result)
+
                 if variables_globales.ventana_actual == VentanaActual.CHOFER and str("chofer") not in str(self.settings.value('ventana_actual')):
                     self.registrar_usuario = VentanaChofer(AbrirVentanas.cerrar_vuelta.close_signal, AbrirVentanas.cerrar_vuelta.close_signal_pasaje)
                     self.registrar_usuario.show()
                 elif variables_globales.ventana_actual == VentanaActual.CERRAR_VUELTA:
-                    # Abrir ventana cerrar vuelta
                     logging.info('Se abrirá Ventana de Corte')
                     AbrirVentanas.cerrar_vuelta.cargar_datos()
                     AbrirVentanas.cerrar_vuelta.show()
                 elif variables_globales.ventana_actual == VentanaActual.CERRAR_TURNO:
-                    # Abrir ventana cerrar turno
                     logging.info('Se abrirá Ventana de Cerrar Turno')
                     AbrirVentanas.cerrar_turno.cargar_datos()
                     AbrirVentanas.cerrar_turno.show()
@@ -417,7 +545,6 @@ class Ventana(QWidget):
             logging.info("Error al actualizar el servidor: " + str(e))
             print("Error al actualizar el servidor: " + str(e))
 
-    # Con este método obtenemos la hora
     def obtener_hora(self):
         try:
             fecha_hora = subprocess.check_output(['date', '+%Y/%m/%d %H:%M:%S']).decode().strip()
@@ -432,7 +559,6 @@ class Ventana(QWidget):
         except Exception as e:
             print("\x1b[1;31;47m" + str(e) + '\033[0;m')
 
-    # Con este método cambiamos el icono del 3g según la señal
     def flash_3g(self, signal):
         try:
             if (signal == -1):
@@ -451,7 +577,6 @@ class Ventana(QWidget):
             logging.info("Error al actualizar el 3g: " + str(e))
             print("Error al actualizar el 3g: " + str(e))
 
-    # Con este método ocultamos o mostramos el icono del sim
     def flash_sim(self, respuesta):
         try:
             if respuesta == "OK\r\n" or respuesta == "+QINISTAT: 7\r\n":
@@ -462,7 +587,6 @@ class Ventana(QWidget):
             logging.info("Error al actualizar el sim: " + str(e))
             print("Error al actualizar el sim: " + str(e))
 
-    # Con este método ocultamos o mostramos el icono del gps
     def flash_gps(self, estado):
         try:
             if estado != "OK":
@@ -483,7 +607,6 @@ class Ventana(QWidget):
             logging.info("Error al actualizar el gps: " + str(e))
             print("Error al actualizar el gps: " + str(e))
 
-    # Inicializamos las señales de los botones
     def inicializar(self):
         try:
             self.label_font.mousePressEvent = self.handle_ok
@@ -494,27 +617,20 @@ class Ventana(QWidget):
             print("Error al inicializar: " + str(e))
 
     def pn532_hard_reset(self, event):
+        """
+        NO hace reset físico desde la UI.
+        Solo solicita el reset y el dueño del PN532 (CARD o HCE) lo ejecuta bajo lock.
+        """
         try:
             import variables_globales as vg
-
-            # intenta reset inmediato solo si el PN532 está libre
-            if vg.pn532_acquire("UI_RESET", timeout=0.2):
-                try:
-                    # NO llames HUB.pulse aquí: no tienes acceso a nfc_close_all de la lib C
-                    # así que mejor igual pedirlo al worker:
-                    vg.pn532_request_reset()
-                finally:
-                    vg.pn532_release()
-            else:
-                vg.pn532_request_reset()
+            vg.pn532_request_reset()
         except Exception as e:
-            logging.error(f"Error reset PN532 (UI): {e}")
+            print("Error solicitando reset NFC: " + str(e))
+            logging.error(f"Error solicitando reset NFC: {e}")
 
-    # Método para manejar el evento click del label ok
     def handle_ok(self, event):
         pass
 
-    # Método para obtener la temperatura de la raspberry
     def temperatura(self):
         try:
             t = subprocess.run("vcgencmd measure_temp", stdout=subprocess.PIPE, shell=True)
@@ -530,7 +646,6 @@ class Ventana(QWidget):
             logging.info("Error al obtener la temperatura: " + str(e))
             print("Error al obtener la temperatura: " + str(e))
 
-    # Método para obtener la mac address
     def pide_mac(self):
         try:
             m = subprocess.run("cat /sys/class/net/eth0/address", stdout=subprocess.PIPE, shell=True)
@@ -543,7 +658,7 @@ class Ventana(QWidget):
     def scrollbar_value_changed(self, value):
         try:
             if self.backlight is not None:
-                if value >= 10:
+                if value >= 5:
                     self.backlight.brightness = value
         except Exception as e:
             print("Ocurrió algo al ejecutar la función del brillo: ", e)

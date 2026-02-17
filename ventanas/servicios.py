@@ -78,6 +78,7 @@ class Rutas(QWidget):
             self.list_serv_2.itemClicked.connect(self.item_select_2_serv2)
             self.list_serv_3.itemClicked.connect(self.item_select_3_serv3)
             self.label_avanzar.mousePressEvent = self.handle_avanzar
+            self.label_avanzar_2.mousePressEvent = self.handle_avanzar
             self.label_retroceder.mousePressEvent = self.handle_retroceder
             self.list_trans1.itemClicked.connect(self.item_select_trans2)
             self.list_trans2.itemClicked.connect(self.item_select_trans3)
