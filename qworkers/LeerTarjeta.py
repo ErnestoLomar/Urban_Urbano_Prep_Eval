@@ -213,6 +213,13 @@ class QrReaderWorker(QObject):
 
                         _, unidad_qr, fecha_qr, hora_qr, id_tarifa, origen, destino, tipo_de_pasajero, servicio_qr, id_monedero, saldo_posterior, precio, tipo_transaccion = qr_list
 
+                        if unidad_qr != self.idUnidad:
+                            print("La unidad del QR es diferente a la unidad actual")
+                            self._emit_mensaje("EQUIVOCADO", "Unidad diferente", 4.5)
+                            self.hub.buzzer_blinks(5, on_ms=55, off_ms=55)
+                            time.sleep(4.5)
+                            continue
+                        
                         fecha_hoy = strftime('%d-%m-%Y').replace('/', '-')
                         if fecha_hoy != fecha_qr:
                             self._emit_mensaje("CADUCO", "Fecha diferente", 4.5)
@@ -532,7 +539,7 @@ class LeerTarjetaWorker(QObject):
         self.qr_thread = QThread(self)
         self.qr_worker = QrReaderWorker(self.hub, self.idUnidad)
         self.qr_worker.moveToThread(self.qr_thread)
-        self.qr_worker.mostrar_mensaje.connect(self.reenviar_mensaje, Qt.QueuedConnection)
+        self.qr_worker.mostrar_mensaje.connect(self.reenviar_mensaje, Qt.DirectConnection)
         self.qr_thread.started.connect(self.qr_worker.start)
         self.qr_thread.start()
         

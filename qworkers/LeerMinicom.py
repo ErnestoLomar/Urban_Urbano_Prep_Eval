@@ -138,7 +138,12 @@ class LeerMinicomWorker(QObject):
                             print("Enviando trama 3 sin viaje")
                             logging.info("Enviando trama 3 sin viaje")
                             folio_de_viaje_sin_viaje = f"{''.join(fecha_completa[:10].split('-'))[3:]}{self.idUnidad}{99}"
+                            
                             trama_3_sin_folio = "[3"+","+str(self.folio)+','+str(folio_de_viaje_sin_viaje)+","+hora+","+str(res['latitud'])+","+str(res['longitud'])+","+str(variables_globales.geocerca.split(",")[0])+","+str(res['velocidad']+"]")
+                            
+                            if len(trama_3_sin_folio.split(",")[2].replace(" ","")) == 0:
+                                continue
+                            
                             result = modem.mandar_datos(trama_3_sin_folio)
                             enviado = result['enviado']
                             if enviado == True:
@@ -187,17 +192,22 @@ class LeerMinicomWorker(QObject):
                                 self.lista_de_datos_por_enviar.append(f"{total_ventas_digital_no_enviadas[0][3]}{total_ventas_digital_no_enviadas[0][4]},ventadigital")
                             
                             if len(self.lista_de_datos_por_enviar) != 0:
-                                #print("Lista de datos: ", self.lista_de_datos_por_enviar)
+                                def clave_fecha_hora(s: str) -> int:
+                                    # Convierte "23-02-202610:03:37.123" -> 23022026100337123
+                                    # Convierte "2026-02-23 10:03:37"   -> 20260223100337
+                                    return int(''.join(ch for ch in str(s) if ch.isdigit()))
+
                                 primer_dato = self.lista_de_datos_por_enviar[0].split(",")
-                                menor_operacion = int(str(primer_dato[0]).replace(":", "").replace("-", ""))
                                 menor = primer_dato[0]
+                                menor_operacion = clave_fecha_hora(menor)
                                 tipo_de_dato = primer_dato[1]
+
                                 for i in range(len(self.lista_de_datos_por_enviar)):
-                                    #print("Item de lista: ", self.lista_de_datos_por_enviar[i])
                                     dato = self.lista_de_datos_por_enviar[i].split(",")
-                                    if int(str(dato[0]).replace(":", "").replace("-", "")) < menor_operacion:
+                                    op = clave_fecha_hora(dato[0])
+                                    if op < menor_operacion:
                                         menor = dato[0]
-                                        menor_operacion = int(str(dato[0]).replace(":", "").replace("-", ""))
+                                        menor_operacion = op
                                         tipo_de_dato = dato[1]
                                 #print("El menor es: "+str(menor))
                                 #print("El menor operacion es: "+str(menor_operacion))
@@ -812,7 +822,7 @@ class LeerMinicomWorker(QObject):
                         folio_aforo_unidad = str(venta[1])
                         folio_viaje = str(venta[2])
                         fecha = str(venta[3])
-                        hora = str(venta[4])
+                        hora = str(venta[4])[:8]
                         id_tarifa = int(venta[5])
                         folio_geoloc = int(venta[6])
                         id_tipo_pasajero = int(venta[7])
@@ -827,7 +837,7 @@ class LeerMinicomWorker(QObject):
                         # Validaciones
                         if not folio_aforo_unidad or not folio_viaje or not hora:
                             raise ValueError("Folio aforo, folio viaje u hora vacíos.")
-                        if tipo_pago not in ["q", "f", "Q", "F"]:
+                        if tipo_pago not in ["q", "f", "Q", "F"]: # Minuscula de prueba y Mayuscula reales.
                             raise ValueError(f"Tipo de pago inválido: {tipo_pago}")
                         # if transbordo not in ["t", "n", "NO"]:
                         #     raise ValueError(f"Transbordo inválido: {transbordo}")
