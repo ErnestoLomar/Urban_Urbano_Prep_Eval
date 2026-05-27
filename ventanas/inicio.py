@@ -303,12 +303,39 @@ class Ventana(QWidget):
                 if ventana_actual == str("chofer"):
                     logging.info('Se debería de abrir la Ventana de chofer')
                     self.settings.setValue('ventana_actual', "")
-                    if len(str(csn_chofer)) > 0:
+
+                    if len(str(csn_chofer or "")) > 0:
                         print("El CSN guardado es: ", csn_chofer)
-                        insertar_estadisticas_boletera(str(self.unidad[1]), fecha, hora, "ElegirServicio", f"{csn_chofer}")
+                        insertar_estadisticas_boletera(
+                            str(self.unidad[1]),
+                            fecha,
+                            hora,
+                            "ElegirServicio",
+                            f"{csn_chofer}"
+                        )
                     else:
-                        insertar_estadisticas_boletera(str(self.unidad[1]), fecha, hora, "ElegirServicio", f"SINCSN")
+                        insertar_estadisticas_boletera(
+                            str(self.unidad[1]),
+                            fecha,
+                            hora,
+                            "ElegirServicio",
+                            "SINCSN"
+                        )
+
+                    # Estado incompleto: estaba en selección de viaje.
+                    # Se limpia completo para no dejar nombre de operador sin CSN.
+                    variables_globales.csn_chofer = ""
+                    variables_globales.numero_de_operador_inicio = ""
+                    variables_globales.numero_de_operador_final = ""
+                    variables_globales.nombre_de_operador_inicio = ""
+                    variables_globales.nombre_de_operador_final = ""
+
                     self.settings.setValue('csn_chofer', "")
+                    self.settings.setValue('csn_chofer_dos', "")
+                    self.settings.setValue('numero_de_operador_inicio', "")
+                    self.settings.setValue('numero_de_operador_final', "")
+                    self.settings.setValue('nombre_de_operador_inicio', "")
+                    self.settings.setValue('nombre_de_operador_final', "")
 
                 elif ventana_actual == 'servicios_transbordos':
                     logging.info('Se abrirá Ventana de servicios_transbordos')
@@ -498,28 +525,99 @@ class Ventana(QWidget):
 
     # leer la tarjeta
     def reportProgressTarjeta(self, result):
-        try: 
+        try:
             self.set_nfc_loading(False)
-            if len(result) == 14:
-                if self.settings.value('csn_chofer') == "":
-                    variables_globales.csn_chofer = result
-                    self.settings.setValue('csn_chofer', result)
-                else:
-                    if self.settings.value('csn_chofer') != result:
-                        variables_globales.csn_chofer = result
-                        self.settings.setValue('csn_chofer_dos', result)
 
-                if variables_globales.ventana_actual == VentanaActual.CHOFER and str("chofer") not in str(self.settings.value('ventana_actual')):
-                    self.registrar_usuario = VentanaChofer(AbrirVentanas.cerrar_vuelta.close_signal, AbrirVentanas.cerrar_vuelta.close_signal_pasaje)
-                    self.registrar_usuario.show()
-                elif variables_globales.ventana_actual == VentanaActual.CERRAR_VUELTA:
-                    logging.info('Se abrirá Ventana de Corte')
-                    AbrirVentanas.cerrar_vuelta.cargar_datos()
-                    AbrirVentanas.cerrar_vuelta.show()
-                elif variables_globales.ventana_actual == VentanaActual.CERRAR_TURNO:
-                    logging.info('Se abrirá Ventana de Cerrar Turno')
-                    AbrirVentanas.cerrar_turno.cargar_datos()
-                    AbrirVentanas.cerrar_turno.show()
+            result = str(result or "").strip()
+
+            if len(result) != 14:
+                logging.warning(f"[TARJETA_INVALIDA] UID recibido={result}")
+                return
+
+            estado = variables_globales.ventana_actual
+            ventana_settings = str(self.settings.value('ventana_actual') or "")
+            csn_actual = str(self.settings.value('csn_chofer') or "").strip()
+
+            logging.info(
+                f"[LECTURA_TARJETA] "
+                f"uid_leido={result}, "
+                f"csn_actual={csn_actual}, "
+                f"estado={estado}, "
+                f"ventana_settings={ventana_settings}, "
+                f"operador_inicio={self.settings.value('nombre_de_operador_inicio')}"
+            )
+
+            # -------------------------------------------------
+            # 1. No existe sesión activa: esta tarjeta abre sesión.
+            # -------------------------------------------------
+            if csn_actual == "":
+                variables_globales.csn_chofer = result
+                self.settings.setValue('csn_chofer', result)
+                self.settings.setValue('csn_chofer_dos', "")
+                logging.info(f"[CSN_INICIO_SET] csn_chofer={result}")
+
+            # -------------------------------------------------
+            # 2. Es la misma tarjeta de la sesión activa.
+            # -------------------------------------------------
+            elif csn_actual == result:
+                variables_globales.csn_chofer = result
+                logging.info(f"[CSN_MISMA_SESION] csn_chofer={result}")
+
+            # -------------------------------------------------
+            # 3. Es una tarjeta diferente.
+            #    Solo se acepta como tarjeta de cierre durante CERRAR_VUELTA.
+            # -------------------------------------------------
+            else:
+                if estado == VentanaActual.CERRAR_VUELTA:
+                    variables_globales.csn_chofer_dos = result
+                    self.settings.setValue('csn_chofer_dos', result)
+
+                    logging.info(
+                        f"[CSN_CIERRE_SET] "
+                        f"csn_inicio={csn_actual}, "
+                        f"csn_cierre={result}"
+                    )
+                else:
+                    self.settings.setValue('csn_chofer_dos', "")
+
+                    logging.error(
+                        f"[ERROR_TARJETA_DIFERENTE_SESION] "
+                        f"estado={estado}, "
+                        f"ventana_settings={ventana_settings}, "
+                        f"csn_sesion={csn_actual}, "
+                        f"csn_leido={result}, "
+                        f"operador_inicio={self.settings.value('nombre_de_operador_inicio')}"
+                    )
+
+                    self.mostrarEmergente(
+                        "TARJETA DIFERENTE",
+                        "Cierre el turno actual",
+                        4.5
+                    )
+                    return
+
+            # -------------------------------------------------
+            # Apertura de ventanas según estado actual.
+            # -------------------------------------------------
+            if estado == VentanaActual.CHOFER and "chofer" not in ventana_settings:
+                logging.info("[VENTANA] Se abrirá VentanaChofer")
+
+                self.registrar_usuario = VentanaChofer(
+                    AbrirVentanas.cerrar_vuelta.close_signal,
+                    AbrirVentanas.cerrar_vuelta.close_signal_pasaje
+                )
+                self.registrar_usuario.show()
+
+            elif estado == VentanaActual.CERRAR_VUELTA:
+                logging.info("[VENTANA] Se abrirá Ventana de Corte")
+                AbrirVentanas.cerrar_vuelta.cargar_datos()
+                AbrirVentanas.cerrar_vuelta.show()
+
+            elif estado == VentanaActual.CERRAR_TURNO:
+                logging.info("[VENTANA] Se abrirá Ventana de Cerrar Turno")
+                AbrirVentanas.cerrar_turno.cargar_datos()
+                AbrirVentanas.cerrar_turno.show()
+
         except Exception as e:
             logging.info("Error al leer la tarjeta: " + str(e))
             print("Error al leer la tarjeta: " + str(e))

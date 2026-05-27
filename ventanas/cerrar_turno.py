@@ -66,27 +66,42 @@ class CerrarTurno(QWidget):
         try:
             self.close()
             self.close_signal.emit()
+
             variables_globales.ventana_actual = VentanaActual.CHOFER
+
             self.settings.setValue('servicio', "")
             self.settings.setValue('ventana_actual', "")
+
+            # Limpieza completa de sesión.
             self.settings.setValue('csn_chofer', "")
+            self.settings.setValue('csn_chofer_dos', "")
+            self.settings.setValue('respaldo_csn_chofer', "")
+
             variables_globales.csn_chofer = ""
             variables_globales.numero_de_operador_inicio = ""
             variables_globales.numero_de_operador_final = ""
             variables_globales.nombre_de_operador_inicio = ""
             variables_globales.nombre_de_operador_final = ""
+
             self.settings.setValue('numero_de_operador_inicio', "")
             self.settings.setValue('numero_de_operador_final', "")
             self.settings.setValue('nombre_de_operador_inicio', "")
             self.settings.setValue('nombre_de_operador_final', "")
-            subprocess.run('sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches"', shell=True)
 
-            # Apagar ventilador por hub si está mapeado
+            logging.info("[CIERRE_TURNO_OK] Sesión de operador limpiada completamente")
+
+            subprocess.run(
+                'sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches"',
+                shell=True
+            )
+
+            # Apagar ventilador por hub si está mapeado.
             if "fan_en" in PINMAP:
                 try:
                     HUB.write("fan_en", False)
                 except Exception as e:
                     logging.info(f"No se pudo apagar el ventilador: {e}")
+
         except Exception as e:
             print(e)
             logging.info(f"Error al cerrar el turno: {e}")
@@ -95,17 +110,46 @@ class CerrarTurno(QWidget):
         try:
             self.close()
             self.close_signal.emit()
+
+            # Se conserva la sesión de inicio.
+            # Este flujo es para iniciar otro viaje con el mismo operador.
             self.settings.setValue('ventana_actual', "")
-            from abrir_ventanas import AbrirVentanas
-            variables_globales.ventana_actual = VentanaActual.CHOFER
-            self.registrar_usuario = VentanaChofer(AbrirVentanas.cerrar_vuelta.close_signal, AbrirVentanas.cerrar_vuelta.close_signal_pasaje)
-            self.registrar_usuario.show()
             self.settings.setValue('servicio', "")
+
+            variables_globales.csn_chofer = str(self.settings.value('csn_chofer') or "")
+            variables_globales.numero_de_operador_inicio = str(self.settings.value('numero_de_operador_inicio') or "")
+            variables_globales.nombre_de_operador_inicio = str(self.settings.value('nombre_de_operador_inicio') or "")
+
+            # Se limpian únicamente datos de cierre.
             variables_globales.numero_de_operador_final = ""
             variables_globales.nombre_de_operador_final = ""
+
+            self.settings.setValue('csn_chofer_dos', "")
             self.settings.setValue('numero_de_operador_final', "")
             self.settings.setValue('nombre_de_operador_final', "")
-            subprocess.run('sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches"', shell=True)
+
+            logging.info(
+                f"[CAMBIAR_RUTA] "
+                f"Se conserva sesión. "
+                f"csn_chofer={self.settings.value('csn_chofer')}, "
+                f"operador_inicio={self.settings.value('nombre_de_operador_inicio')}"
+            )
+
+            from abrir_ventanas import AbrirVentanas
+
+            variables_globales.ventana_actual = VentanaActual.CHOFER
+
+            self.registrar_usuario = VentanaChofer(
+                AbrirVentanas.cerrar_vuelta.close_signal,
+                AbrirVentanas.cerrar_vuelta.close_signal_pasaje
+            )
+            self.registrar_usuario.show()
+
+            subprocess.run(
+                'sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches"',
+                shell=True
+            )
+
         except Exception as e:
             print(e)
             logging.info(f"Error al cambiar la ruta: {e}")

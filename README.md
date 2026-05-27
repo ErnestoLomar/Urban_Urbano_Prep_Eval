@@ -5,6 +5,18 @@ Software de validador para camiones de transporte urbano para la empresa Urban d
 
 Linea cronológica:
 
+- v3.73:
+  - Se agregó un mensaje más claro e intuitivo cuando la impresora presenta algún error.
+  - Se reorganizaron los íconos táctiles ubicados en la parte inferior de la interfaz para reducir problemas de uso en caso de fallas en el touch.
+  - Al iniciar el sistema, si se detecta un número de unidad no esperado, se muestra una alerta en pantalla completa para notificar al usuario.
+  - Se robusteció la comunicación con el celular HCE, especialmente en el envío de datos y formatos como fecha y hora.
+  - Se agregó una validación para rechazar operaciones cuando la unidad registrada en la boletera no coincide con la unidad del QR generado por la app de prepago.
+  - Se mejoró la comunicación con el módulo PN532, tanto para tarjetas como para comunicación HCE con la app de prepago.
+  - Se ajustaron los colores de los textos en las interfaces de corte y pasaje, cambiando de azul claro a azul rey para mejorar la visibilidad.
+  - Se optimizó el código relacionado con la impresora.
+  - Se corrigió un error en la impresión del ticket donde el total mostrado no coincidía con el resumen de boletos.
+  - Se reforzó el manejo del operador en los tickets para evitar diferencias entre el operador impreso y el enviado al servidor. Esto incluye mejoras en el guardado del operador, validaciones adicionales para asegurar el UID y filtros para determinar qué información debe conservarse cuando la sesión permanece abierta y se inicia otro viaje.
+  - Se eliminó la asociación automática al socket 8211.
 - v3.72:
   - Se corrigió el bug de los botones de reinicio en inicio y servicios.
 - v3.71:

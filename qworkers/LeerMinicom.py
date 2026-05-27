@@ -138,12 +138,7 @@ class LeerMinicomWorker(QObject):
                             print("Enviando trama 3 sin viaje")
                             logging.info("Enviando trama 3 sin viaje")
                             folio_de_viaje_sin_viaje = f"{''.join(fecha_completa[:10].split('-'))[3:]}{self.idUnidad}{99}"
-                            
                             trama_3_sin_folio = "[3"+","+str(self.folio)+','+str(folio_de_viaje_sin_viaje)+","+hora+","+str(res['latitud'])+","+str(res['longitud'])+","+str(variables_globales.geocerca.split(",")[0])+","+str(res['velocidad']+"]")
-                            
-                            if len(trama_3_sin_folio.split(",")[2].replace(" ","")) == 0:
-                                continue
-                            
                             result = modem.mandar_datos(trama_3_sin_folio)
                             enviado = result['enviado']
                             if enviado == True:
@@ -822,7 +817,7 @@ class LeerMinicomWorker(QObject):
                         folio_aforo_unidad = str(venta[1])
                         folio_viaje = str(venta[2])
                         fecha = str(venta[3])
-                        hora = str(venta[4])[:8]
+                        hora = str(venta[4])
                         id_tarifa = int(venta[5])
                         folio_geoloc = int(venta[6])
                         id_tipo_pasajero = int(venta[7])

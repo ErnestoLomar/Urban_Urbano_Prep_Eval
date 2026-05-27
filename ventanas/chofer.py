@@ -151,280 +151,262 @@ class VentanaChofer(QWidget):
         except Exception as e:
             print(e)
             logging.info(e)
-
-    # OK (crear viaje)
-    def handle_ok(self, event):
+            
+    def limpiar_estado_inicio(self):
         try:
-            self.close()
-            folio_asignacion_viaje = vg.folio_asignacion
-
-            if len(str(folio_asignacion_viaje)) <= 1:
-                fecha_completa = strftime('%Y-%m-%d %H:%M:%S')
-                hora = strftime('%H:%M:%S')
-                fecha_vg = str(vg.fecha_actual).replace('/', '-')
-                print("La fecha actual de la raspberry es: ", fecha_vg)
-
-                if self.pension_selec != "":
-                    if self.servicio != "":
-                        origen = obtener_origen_por_numero_de_servicio(int(self.servicio.split(" - ")[0]))
-                        total_de_servicios = obtener_servicio_por_numero_de_servicio_y_origen(
-                            int(self.servicio.split(" - ")[0]),
-                            str(origen[3]).replace("(", "").replace(")", "").replace(",", "").replace("'", "")
-                        )
-
-                        if len(total_de_servicios) != 0:
-                            # Última asignación
-                            ultima_asignacion = obtener_ultima_asignacion()
-                            print("La ultima asignacion es: ", ultima_asignacion)
-
-                            self.settings.setValue('servicio', self.servicio)
-                            self.settings.setValue('pension', self.pension_selec)
-                            self.settings.setValue('turno', self.comboBox_turno.currentText())
-
-                            if len(self.settings.value('csn_chofer')) > 0:
-                                guardar_auto_asignacion(self.settings.value('csn_chofer'),
-                                                        f"{self.settings.value('servicio')},{self.settings.value('pension')}",
-                                                        fecha_vg, hora)
-                            elif len(vg.csn_chofer) > 0:
-                                guardar_auto_asignacion(str(vg.csn_chofer),
-                                                        f"{self.settings.value('servicio')},{self.settings.value('pension')}",
-                                                        fecha_vg, hora)
-
-                            folio = self.crear_folio()
-
-                            # Evitar repetir folio
-                            if ultima_asignacion is not None and ultima_asignacion[1] == folio:
-                                print("Se procederá a aumentar el folio ya que es el mismo que el anterior")
-                                logging.info("Se procederá a aumentar el folio ya que es el mismo que el anterior")
-                                folio = obtener_ultimo_folio_auto_asignacion()['folio'] + 1
-                                modificar_folio_auto_asignacion(folio, ultima_asignacion[0])
-
-                            print("Folio creado: ", folio)
-
-                            while True:
-                                folio_de_viaje = f"{''.join(fecha_completa[:10].split('-'))[3:]}{self.idUnidad}{folio}"
-                                if len(folio_de_viaje) == 12:
-                                    vg.servicio = self.servicio
-                                    vg.turno = self.comboBox_turno.currentText()
-                                    vg.folio_asignacion = folio_de_viaje
-
-                                    self.settings.setValue('folio_de_viaje', folio_de_viaje)
-                                    print("Folio de viaje: ", folio_de_viaje)
-                                    logging.info(f"Folio de viaje: {folio_de_viaje}")
-                                    aniadir_folio_de_viaje_a_auto_asignacion(folio, folio_de_viaje, fecha_vg)
-
-                                    self.rutas = Rutas(self.turno, self.servicio, self.close_signal, self.close_signal_pasaje)
-                                    self.rutas.setGeometry(0, 0, 800, 440)
-                                    self.rutas.setWindowFlags(Qt.FramelessWindowHint)
-                                    self.rutas.show()
-                                    break
-
-                                if self.intentos == 3:
-                                    self.intentos = 0
-                                    ultimo_folio_de_autoasignacion = str(obtener_ultima_asignacion()[1])
-                                    eliminar_auto_asignacion_por_folio(ultimo_folio_de_autoasignacion)
-                                    print("No se creo correctamente el folio")
-                                    try:
-                                        HUB.write("fan_en", False)
-                                    except Exception as e:
-                                        logging.info(f"No se pudo apagar el ventilador: {e}")
-                                    self.servicio = ""
-                                    vg.csn_chofer = ""
-                                    self.settings.setValue('ventana_actual', "")
-                                    self.settings.setValue('csn_chofer', "")
-
-                                    vg.numero_de_operador_inicio = ""
-                                    vg.numero_de_operador_final = ""
-                                    vg.nombre_de_operador_inicio = ""
-                                    vg.nombre_de_operador_final = ""
-                                    self.settings.setValue('numero_de_operador_inicio', "")
-                                    self.settings.setValue('numero_de_operador_final', "")
-                                    self.settings.setValue('nombre_de_operador_inicio', "")
-                                    self.settings.setValue('nombre_de_operador_final', "")
-
-                                    HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
-                                    break
-                                self.intentos += 1
-                        else:
-                            print("No hay servicios disponibles1")
-                            print("Total de servicios1: ", len(total_de_servicios))
-                            try:
-                                HUB.write("fan_en", False)
-                            except Exception as e:
-                                logging.info(f"No se pudo apagar el ventilador: {e}")
-                            self.servicio = ""
-                            vg.csn_chofer = ""
-                            self.settings.setValue('ventana_actual', "")
-                            self.settings.setValue('csn_chofer', "")
-
-                            vg.numero_de_operador_inicio = ""
-                            vg.numero_de_operador_final = ""
-                            vg.nombre_de_operador_inicio = ""
-                            vg.nombre_de_operador_final = ""
-                            self.settings.setValue('numero_de_operador_inicio', "")
-                            self.settings.setValue('numero_de_operador_final', "")
-                            self.settings.setValue('nombre_de_operador_inicio', "")
-                            self.settings.setValue('nombre_de_operador_final', "")
-
-                            HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
-                    else:
-                        origen = obtener_origen_por_numero_de_servicio(int(str(self.comboBox_servicio.currentText()).split(" - ")[0]))
-                        total_de_servicios = obtener_servicio_por_numero_de_servicio_y_origen(
-                            int(str(self.comboBox_servicio.currentText()).split(" - ")[0]),
-                            str(origen[3]).replace("(", "").replace(")", "").replace(",", "").replace("'", "")
-                        )
-                        if len(total_de_servicios) != 0:
-                            vg.servicio = self.comboBox_servicio.currentText()
-                            self.settings.setValue('servicio', self.comboBox_servicio.currentText())
-                            self.settings.setValue('pension', self.pension_selec)
-                            vg.turno = self.comboBox_turno.currentText()
-                            self.settings.setValue('turno', self.comboBox_turno.currentText())
-
-                            # Última asignación
-                            ultima_asignacion = obtener_ultima_asignacion()
-                            print("La ultima asignacion es: ", ultima_asignacion)
-
-                            if len(self.settings.value('csn_chofer')) > 0:
-                                guardar_auto_asignacion(self.settings.value('csn_chofer'),
-                                                        f"{self.settings.value('servicio')},{self.settings.value('pension')}",
-                                                        fecha_vg, hora)
-                            elif len(vg.csn_chofer) > 0:
-                                guardar_auto_asignacion(str(vg.csn_chofer),
-                                                        f"{self.settings.value('servicio')},{self.settings.value('pension')}",
-                                                        fecha_vg, hora)
-
-                            folio = self.crear_folio()
-
-                            if ultima_asignacion is not None and ultima_asignacion[1] == folio:
-                                print("Se procederá a aumentar el folio ya que es el mismo que el anterior")
-                                logging.info("Se procederá a aumentar el folio ya que es el mismo que el anterior")
-                                folio = obtener_ultimo_folio_auto_asignacion()['folio'] + 1
-                                modificar_folio_auto_asignacion(folio, ultima_asignacion[0])
-
-                            print("Folio creado: ", folio)
-                            while True:
-                                folio_de_viaje = f"{''.join(fecha_completa[:10].split('-'))[3:]}{self.idUnidad}{folio}"
-                                if len(folio_de_viaje) == 12:
-                                    vg.folio_asignacion = folio_de_viaje
-                                    self.settings.setValue('folio_de_viaje', folio_de_viaje)
-                                    print("Folio de viaje: ", folio_de_viaje)
-                                    logging.info(f"Folio de viaje: {folio_de_viaje}")
-                                    aniadir_folio_de_viaje_a_auto_asignacion(folio, folio_de_viaje, fecha_vg)
-
-                                    self.rutas = Rutas(self.turno, self.comboBox_servicio.currentText(), self.close_signal, self.close_signal_pasaje)
-                                    self.rutas.setGeometry(0, 0, 800, 440)
-                                    self.rutas.setWindowFlags(Qt.FramelessWindowHint)
-                                    self.rutas.show()
-                                    break
-                                if self.intentos == 3:
-                                    self.intentos = 0
-                                    ultimo_folio_de_autoasignacion = str(obtener_ultima_asignacion()[1])
-                                    eliminar_auto_asignacion_por_folio(ultimo_folio_de_autoasignacion)
-                                    print("No se creo correctamente el folio")
-                                    try:
-                                        HUB.write("fan_en", False)
-                                    except Exception as e:
-                                        logging.info(f"No se pudo apagar el ventilador: {e}")
-                                    self.servicio = ""
-                                    vg.csn_chofer = ""
-                                    self.settings.setValue('ventana_actual', "")
-                                    self.settings.setValue('csn_chofer', "")
-
-                                    vg.numero_de_operador_inicio = ""
-                                    vg.numero_de_operador_final = ""
-                                    vg.nombre_de_operador_inicio = ""
-                                    vg.nombre_de_operador_final = ""
-                                    self.settings.setValue('numero_de_operador_inicio', "")
-                                    self.settings.setValue('numero_de_operador_final', "")
-                                    self.settings.setValue('nombre_de_operador_inicio', "")
-                                    self.settings.setValue('nombre_de_operador_final', "")
-
-                                    HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
-                                    break
-                                self.intentos += 1
-                        else:
-                            print("No hay servicios disponibles2")
-                            print("Total de servicios2: ", len(total_de_servicios))
-                            try:
-                                HUB.write("fan_en", False)
-                            except Exception as e:
-                                logging.info(f"No se pudo apagar el ventilador: {e}")
-                            self.servicio = ""
-                            vg.csn_chofer = ""
-                            self.settings.setValue('ventana_actual', "")
-                            self.settings.setValue('csn_chofer', "")
-
-                            vg.numero_de_operador_inicio = ""
-                            vg.numero_de_operador_final = ""
-                            vg.nombre_de_operador_inicio = ""
-                            vg.nombre_de_operador_final = ""
-                            self.settings.setValue('numero_de_operador_inicio', "")
-                            self.settings.setValue('numero_de_operador_final', "")
-                            self.settings.setValue('nombre_de_operador_inicio', "")
-                            self.settings.setValue('nombre_de_operador_final', "")
-
-                            HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
-                else:
-                    print("No hay pension seleccionada")
-                    self.servicio = ""
-                    vg.csn_chofer = ""
-                    self.settings.setValue('ventana_actual', "")
-                    self.settings.setValue('csn_chofer', "")
-
-                    vg.numero_de_operador_inicio = ""
-                    vg.numero_de_operador_final = ""
-                    vg.nombre_de_operador_inicio = ""
-                    vg.nombre_de_operador_final = ""
-                    self.settings.setValue('numero_de_operador_inicio', "")
-                    self.settings.setValue('numero_de_operador_final', "")
-                    self.settings.setValue('nombre_de_operador_inicio', "")
-                    self.settings.setValue('nombre_de_operador_final', "")
-
-                    HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
-            else:
-                self.ve = VentanaEmergente("VOID", "Ya existe un viaje", 4.5)
-                self.ve.show()
-                HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
-
-                print("Ya existe una asignacion de viaje")
-                try:
-                    HUB.write("fan_en", False)
-                except Exception as e:
-                    logging.info(f"No se pudo apagar el ventilador: {e}")
-                self.servicio = ""
-                vg.csn_chofer = ""
-                self.settings.setValue('ventana_actual', "")
-                self.settings.setValue('csn_chofer', "")
-
-                vg.folio_asignacion = 0
-                vg.numero_de_operador_inicio = ""
-                vg.numero_de_operador_final = ""
-                vg.nombre_de_operador_inicio = ""
-                vg.nombre_de_operador_final = ""
-                self.settings.setValue('numero_de_operador_inicio', "")
-                self.settings.setValue('numero_de_operador_final', "")
-                self.settings.setValue('nombre_de_operador_inicio', "")
-                self.settings.setValue('nombre_de_operador_final', "")
-
-        except Exception as e:
-            print(e)
+            try:
+                HUB.write("fan_en", False)
+            except Exception as e:
+                logging.info(f"No se pudo apagar el ventilador: {e}")
 
             self.servicio = ""
-            vg.csn_chofer = ""
-            self.settings.setValue('ventana_actual', "")
-            self.settings.setValue('csn_chofer', "")
 
+            vg.csn_chofer = ""
             vg.numero_de_operador_inicio = ""
             vg.numero_de_operador_final = ""
             vg.nombre_de_operador_inicio = ""
             vg.nombre_de_operador_final = ""
+
+            self.settings.setValue('ventana_actual', "")
+            self.settings.setValue('csn_chofer', "")
+            self.settings.setValue('csn_chofer_dos', "")
             self.settings.setValue('numero_de_operador_inicio', "")
             self.settings.setValue('numero_de_operador_final', "")
             self.settings.setValue('nombre_de_operador_inicio', "")
             self.settings.setValue('nombre_de_operador_final', "")
 
-            HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
+        except Exception as e:
+            print(e)
             logging.info(e)
+
+
+    def obtener_csn_inicio_valido(self):
+        try:
+            csn_settings = str(self.settings.value('csn_chofer') or "").strip()
+            csn_global = str(vg.csn_chofer or "").strip()
+
+            if csn_settings and csn_global and csn_settings != csn_global:
+                logging.error(
+                    f"[ERROR_CSN_DESFASADO] "
+                    f"settings.csn_chofer={csn_settings}, "
+                    f"vg.csn_chofer={csn_global}, "
+                    f"nombre_inicio_settings={self.settings.value('nombre_de_operador_inicio')}, "
+                    f"nombre_inicio_vg={vg.nombre_de_operador_inicio}"
+                )
+
+                self.settings.setValue('csn_chofer_dos', "")
+                return ""
+
+            csn_inicio = csn_settings or csn_global
+
+            if len(csn_inicio) != 14:
+                logging.error(
+                    f"[ERROR_CSN_INVALIDO_INICIO] "
+                    f"csn_inicio={csn_inicio}, "
+                    f"settings.csn_chofer={csn_settings}, "
+                    f"vg.csn_chofer={csn_global}, "
+                    f"nombre_inicio_settings={self.settings.value('nombre_de_operador_inicio')}, "
+                    f"nombre_inicio_vg={vg.nombre_de_operador_inicio}"
+                )
+                return ""
+
+            vg.csn_chofer = csn_inicio
+            self.settings.setValue('csn_chofer', csn_inicio)
+
+            return csn_inicio
+
+        except Exception as e:
+            print(e)
+            logging.info(e)
+            return ""
+
+    # OK (crear viaje)
+    def handle_ok(self, event):
+        try:
+            self.close()
+
+            folio_asignacion_viaje = vg.folio_asignacion
+
+            if len(str(folio_asignacion_viaje)) > 1:
+                self.ve = VentanaEmergente("VOID", "Ya existe un viaje", 4.5)
+                self.ve.show()
+                HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
+
+                print("Ya existe una asignacion de viaje")
+                self.limpiar_estado_inicio()
+                vg.folio_asignacion = 0
+                return
+
+            fecha_completa = strftime('%Y-%m-%d %H:%M:%S')
+            hora = strftime('%H:%M:%S')
+            fecha_vg = str(vg.fecha_actual).replace('/', '-')
+
+            print("La fecha actual de la raspberry es: ", fecha_vg)
+
+            pension_elegida = str(self.pension_selec or self.comboBox_pension.currentText() or "").strip()
+            servicio_elegido = str(self.servicio or self.comboBox_servicio.currentText() or "").strip()
+            turno_elegido = str(self.comboBox_turno.currentText() or "").strip()
+
+            if pension_elegida == "":
+                print("No hay pension seleccionada")
+                logging.info("[ERROR_INICIO_VIAJE] No hay pension seleccionada")
+                self.limpiar_estado_inicio()
+                HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
+                return
+
+            if servicio_elegido == "":
+                print("No hay servicio seleccionado")
+                logging.info("[ERROR_INICIO_VIAJE] No hay servicio seleccionado")
+                self.limpiar_estado_inicio()
+                HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
+                return
+
+            try:
+                numero_servicio = int(servicio_elegido.split(" - ")[0])
+            except Exception as e:
+                print("Servicio inválido: ", servicio_elegido)
+                logging.info(f"[ERROR_INICIO_VIAJE] Servicio inválido={servicio_elegido}, error={e}")
+                self.limpiar_estado_inicio()
+                HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
+                return
+
+            origen = obtener_origen_por_numero_de_servicio(numero_servicio)
+
+            total_de_servicios = obtener_servicio_por_numero_de_servicio_y_origen(
+                numero_servicio,
+                str(origen[3]).replace("(", "").replace(")", "").replace(",", "").replace("'", "")
+            )
+
+            if len(total_de_servicios) == 0:
+                print("No hay servicios disponibles")
+                print("Total de servicios: ", len(total_de_servicios))
+                logging.info(
+                    f"[ERROR_INICIO_VIAJE] No hay servicios disponibles. "
+                    f"servicio={servicio_elegido}, pension={pension_elegida}"
+                )
+
+                self.limpiar_estado_inicio()
+                HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
+                return
+
+            # Última asignación antes de insertar la nueva.
+            ultima_asignacion = obtener_ultima_asignacion()
+            print("La ultima asignacion es: ", ultima_asignacion)
+
+            vg.servicio = servicio_elegido
+            vg.turno = turno_elegido
+
+            self.servicio = servicio_elegido
+            self.pension_selec = pension_elegida
+            self.turno = turno_elegido
+
+            self.settings.setValue('servicio', servicio_elegido)
+            self.settings.setValue('pension', pension_elegida)
+            self.settings.setValue('turno', turno_elegido)
+
+            csn_inicio = self.obtener_csn_inicio_valido()
+
+            if csn_inicio == "":
+                print("No hay CSN válido para iniciar viaje")
+                logging.error(
+                    f"[ERROR_INICIO_VIAJE] No hay CSN válido. "
+                    f"settings.csn_chofer={self.settings.value('csn_chofer')}, "
+                    f"vg.csn_chofer={vg.csn_chofer}, "
+                    f"operador_settings={self.settings.value('nombre_de_operador_inicio')}, "
+                    f"operador_vg={vg.nombre_de_operador_inicio}"
+                )
+                HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
+                return
+
+            guardar_auto_asignacion(
+                csn_inicio,
+                f"{self.settings.value('servicio')},{self.settings.value('pension')}",
+                fecha_vg,
+                hora
+            )
+
+            folio = self.crear_folio()
+
+            if folio is None or str(folio) == "":
+                print("No se pudo crear folio")
+                logging.error("[ERROR_INICIO_VIAJE] No se pudo crear folio")
+                self.limpiar_estado_inicio()
+                HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
+                return
+
+            # Evitar repetir folio.
+            if ultima_asignacion is not None and str(ultima_asignacion[1]) == str(folio):
+                print("Se procederá a aumentar el folio ya que es el mismo que el anterior")
+                logging.info("Se procederá a aumentar el folio ya que es el mismo que el anterior")
+
+                folio = obtener_ultimo_folio_auto_asignacion()['folio'] + 1
+                modificar_folio_auto_asignacion(folio, ultima_asignacion[0])
+
+            print("Folio creado: ", folio)
+
+            while True:
+                folio_de_viaje = f"{''.join(fecha_completa[:10].split('-'))[3:]}{self.idUnidad}{folio}"
+
+                if len(folio_de_viaje) == 12:
+                    vg.folio_asignacion = folio_de_viaje
+
+                    self.settings.setValue('folio_de_viaje', folio_de_viaje)
+
+                    print("Folio de viaje: ", folio_de_viaje)
+                    logging.info(
+                        f"[INICIO_VIAJE_OK] "
+                        f"folio_de_viaje={folio_de_viaje}, "
+                        f"csn_inicio={csn_inicio}, "
+                        f"operador_inicio={self.settings.value('nombre_de_operador_inicio')}, "
+                        f"servicio={servicio_elegido}, "
+                        f"pension={pension_elegida}"
+                    )
+
+                    aniadir_folio_de_viaje_a_auto_asignacion(
+                        folio,
+                        folio_de_viaje,
+                        fecha_vg
+                    )
+
+                    self.rutas = Rutas(
+                        turno_elegido,
+                        servicio_elegido,
+                        self.close_signal,
+                        self.close_signal_pasaje
+                    )
+                    self.rutas.setGeometry(0, 0, 800, 440)
+                    self.rutas.setWindowFlags(Qt.FramelessWindowHint)
+                    self.rutas.show()
+                    break
+
+                if self.intentos == 3:
+                    self.intentos = 0
+
+                    try:
+                        ultimo_folio_de_autoasignacion = str(obtener_ultima_asignacion()[1])
+                        eliminar_auto_asignacion_por_folio(ultimo_folio_de_autoasignacion)
+                    except Exception as e:
+                        logging.info(f"No se pudo eliminar autoasignacion fallida: {e}")
+
+                    print("No se creo correctamente el folio")
+                    logging.error(
+                        f"[ERROR_INICIO_VIAJE] Folio de viaje inválido. "
+                        f"folio={folio}, idUnidad={self.idUnidad}, "
+                        f"folio_de_viaje={folio_de_viaje}"
+                    )
+
+                    self.limpiar_estado_inicio()
+                    HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
+                    break
+
+                self.intentos += 1
+
+        except Exception as e:
+            print(e)
+            logging.info(e)
+
+            self.limpiar_estado_inicio()
+            HUB.buzzer_blinks(5, on_ms=55, off_ms=55)
 
     def crear_folio(self):
         try:
