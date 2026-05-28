@@ -19,8 +19,8 @@ import subprocess
 
 sys.path.insert(1, '/home/pi/Urban_Urbano/utils')
 
-import variables_globales as vg
-from quectelWorker import QuectelWorker
+import urban_urbano.config.variables_globales as vg
+from urban_urbano.workers.quectelWorker import QuectelWorker
 
 '''
 from asignaciones_queries import eliminar_auto_asignaciones_antiguas, eliminar_fin_de_viaje_antiguos

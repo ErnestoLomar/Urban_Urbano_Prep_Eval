@@ -1,0 +1,11 @@
+#Librerías propias
+from urban_urbano.presentation.windows.corte import corte
+from urban_urbano.presentation.windows.cerrar_turno import CerrarTurno
+from PyQt5.QtCore import QObject
+import logging
+class AbrirVentanas(QObject):
+    try:
+        cerrar_turno = CerrarTurno()
+        cerrar_vuelta = corte(cerrar_turno.close_signal)
+    except Exception as e:
+        logging.error(f"Error al abrir las ventanas: {e}")
