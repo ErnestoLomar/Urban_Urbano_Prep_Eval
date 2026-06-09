@@ -5,6 +5,8 @@ Software de validador para camiones de transporte urbano para la empresa Urban d
 
 Linea cronológica:
 
+- v3.74:
+  - Se detectan 2 impresoras.
 - v3.73:
   - Se agregó un mensaje más claro e intuitivo cuando la impresora presenta algún error.
   - Se reorganizaron los íconos táctiles ubicados en la parte inferior de la interfaz para reducir problemas de uso en caso de fallas en el touch.

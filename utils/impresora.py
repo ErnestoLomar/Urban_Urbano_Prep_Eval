@@ -22,8 +22,19 @@ from asignaciones_queries import obtener_asignacion_por_folio_de_viaje, obtener_
 
 
 SETTINGS_PATH = '/home/pi/Urban_Urbano/ventanas/settings.ini'
-NC_IMPRESORA = '0x04c5'
-NS_IMPRESORA = '0x126e'
+
+# -------------------------------------------------------------------------
+# CONFIG: IDs soportados de impresora (VID/PID)
+#   - 0x04c5:0x126e  impresora común en instalación actual
+#   - 0x04b8:0x0e28  impresora alternativa
+#
+# Si después agregas otro modelo, solo añade otra tupla:
+# (VID, PID, interface)
+# -------------------------------------------------------------------------
+PRINTER_CANDIDATES = [
+    (0x04c5, 0x126e, 0),
+    (0x04b8, 0x0e28, 0),
+]
 
 # IMPORTANTE:
 # En tu código original el importe se toma de boleto[11].
@@ -61,7 +72,31 @@ try:
 
 
     def inicializar_impresora():
-        return Usb(int(NC_IMPRESORA, 16), int(NS_IMPRESORA, 16), 0)
+        """
+        Intenta inicializar la impresora probando todos los VID/PID conocidos.
+
+        Regresa una instancia Usb lista para usarse.
+        Si ninguna impresora responde, lanza RuntimeError para que el flujo
+        actual capture el error y regrese False donde corresponda.
+        """
+        last_exc = None
+
+        for vid, pid, interface in PRINTER_CANDIDATES:
+            try:
+                impresora = Usb(vid, pid, interface)
+                logging.info(
+                    f"Impresora encontrada (VID={hex(vid)} PID={hex(pid)} IF={interface})"
+                )
+                return impresora
+            except Exception as e:
+                last_exc = e
+                logging.warning(
+                    f"No se pudo abrir impresora (VID={hex(vid)} PID={hex(pid)} IF={interface}): {e}"
+                )
+
+        raise RuntimeError(
+            "No hubo comunicacion con impresora (ningun VID/PID coincidió)."
+        ) from last_exc
 
 
     def obtener_settings():
