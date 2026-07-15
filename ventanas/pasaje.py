@@ -20,6 +20,7 @@ import subprocess
 # import usb.core
 
 sys.path.insert(1, '/home/pi/Urban_Urbano/db')
+sys.path.insert(1, '/home/pi/Urban_Urbano/utils')
 
 # Hub GPIO (BCM)
 # try:
@@ -342,8 +343,10 @@ class VentanaPasaje(QWidget):
                     imprimir_boleto_normal_pasaje,
                     imprimir_boleto_con_qr_pasaje
                 )
-            except Exception:
-                print("No se importaron las librerías de impresora")
+            except Exception as e:
+                print("No se importaron las librerias de impresora:", e)
+                logging.error(f"No se importaron las librerias de impresora: {e}")
+                return
 
             pasajeros = [
                 ('ESTUDIANTE', self.estudiantes, 1, 'info_estudiantes', self.estudiantes.precio),

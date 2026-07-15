@@ -7,81 +7,109 @@
 ##########################################
 
 #Importamos librerías externas
-import subprocess
 import logging
+import re
+import subprocess
+
+
+I2C_BUS = "1"
+EEPROM_ADDRESS = "0x50"
+MAX_DATA_ADDRESS = 0xFF
+NUM_SERIE_START = 0
+NUM_VERSION_START = 100
+MAX_CAMPO_BYTES = 64
+I2CGET_HEX_RE = re.compile(r"^0x[0-9a-fA-F]{2}$")
+
+
+def _respuesta(state_num_serie, state_num_version):
+    return {
+        "state_num_serie": state_num_serie,
+        "state_num_version": state_num_version,
+    }
+
+
+def _hay_bus_i2c():
+    ok = subprocess.run(
+        ["i2cdetect", "-y", I2C_BUS],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    if ok.returncode != 0:
+        logging.warning("No se pudo detectar bus I2C: %s", ok.stderr.strip())
+        return False
+
+    return True
+
+
+def _leer_byte_eeprom(data_address):
+    if data_address < 0 or data_address > MAX_DATA_ADDRESS:
+        logging.warning("Direccion EEPROM fuera de rango: %s", hex(data_address))
+        return None
+
+    valor = subprocess.run(
+        ["i2cget", "-y", I2C_BUS, EEPROM_ADDRESS, hex(data_address)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    if valor.returncode != 0:
+        logging.warning(
+            "No se pudo leer EEPROM %s en %s: %s",
+            EEPROM_ADDRESS,
+            hex(data_address),
+            valor.stderr.strip(),
+        )
+        return None
+
+    salida = valor.stdout.strip()
+    if not I2CGET_HEX_RE.match(salida):
+        logging.warning(
+            "Respuesta invalida de i2cget en %s: %r",
+            hex(data_address),
+            salida,
+        )
+        return None
+
+    return int(salida, 16)
+
+
+def _leer_texto_eeprom(inicio, max_bytes=MAX_CAMPO_BYTES):
+    datos = bytearray()
+    fin = min(MAX_DATA_ADDRESS + 1, inicio + max_bytes)
+
+    for data_address in range(inicio, fin):
+        byte = _leer_byte_eeprom(data_address)
+
+        if byte is None:
+            return None
+
+        if byte == 0:
+            break
+
+        datos.append(byte)
+
+    try:
+        return datos.decode("utf-8")
+    except UnicodeDecodeError:
+        logging.warning("La EEPROM contiene bytes que no son UTF-8 desde %s", hex(inicio))
+        return datos.decode("utf-8", errors="replace")
 
 #Función para obtener el número de serie y número de versión de la memoria EEPROM y mostrarlo en la GUI
 def cargar_num_serie():
     try:
-        ok = subprocess.run("i2cdetect -y 1", stdout=subprocess.PIPE, shell=True)
-        state_num_serie = ""
-        state_num_version = ""
+        if not _hay_bus_i2c():
+            return _respuesta("NSxxxxx", "NVxxxxx")
 
-        if ok.returncode == 0:
-            try:
-                num_serie_hex = []
-                i = 0
+        state_num_serie = _leer_texto_eeprom(NUM_SERIE_START)
+        state_num_version = _leer_texto_eeprom(NUM_VERSION_START)
 
-                while True:
-                    i_hex = hex(i)
-                    valor = subprocess.run(f"i2cget -y 1 0x50 {i_hex}", stdout=subprocess.PIPE, shell=True)
-                    if valor.stdout[2:4].decode() == "00":
-                        break
-                    num_serie_hex.append(valor.stdout[2:4].decode())
-                    i+=1
+        if state_num_serie is None or state_num_version is None:
+            return _respuesta("ERR", "ERR")
 
-                num_serie_utf8 = []
-                j = 0
-
-                for i in num_serie_hex:
-                    byte_arr = bytearray.fromhex(num_serie_hex[j])
-                    num_serie_utf8.append(byte_arr.decode())
-                    j+=1
-                
-                num_version_hex = []
-                i = 100
-
-                while True:
-                    i_hex = hex(i)
-                    valor = subprocess.run(f"i2cget -y 1 0x50 {i_hex}", stdout=subprocess.PIPE, shell=True)
-                    if valor.stdout[2:4].decode() == "00":
-                        break
-                    num_version_hex.append(valor.stdout[2:4].decode())
-                    i+=1
-
-                num_version_utf8 = []
-                j = 0
-
-                for i in num_version_hex:
-                    byte_arr = bytearray.fromhex(num_version_hex[j])
-                    num_version_utf8.append(byte_arr.decode())
-                    j+=1
-                
-                state_num_serie = "".join(num_serie_utf8)
-                state_num_version = "".join(num_version_utf8)
-                return { 
-                    "state_num_serie": state_num_serie, 
-                    "state_num_version": state_num_version  
-                }
-            except:
-                state_num_serie = "ERR"
-                state_num_version = "ERR"
-                return { 
-                    "state_num_serie": state_num_serie,
-                    "state_num_version": state_num_version
-                }
-        else:
-            state_num_serie = "NSxxxxx"
-            state_num_version = "NVxxxxx"
-            return {
-                "state_num_serie": state_num_serie,
-                "state_num_version": state_num_version
-            }
+        return _respuesta(state_num_serie, state_num_version)
     except Exception as e:
         logging.error(e)
-        state_num_serie = "ERR"
-        state_num_version = "ERR"
-        return {
-            "state_num_serie": state_num_serie,
-            "state_num_version": state_num_version
-        }
+        return _respuesta("ERR", "ERR")

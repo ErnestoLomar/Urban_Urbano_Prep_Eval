@@ -5,8 +5,13 @@ Software de validador para camiones de transporte urbano para la empresa Urban d
 
 Linea cronológica:
 
+- v3.75:
+  - Se robusteció la lectura del número de serie y número de versión de la tablilla desde la EEPROM por I2C.
+  - Se validan respuestas de `i2cget`, rangos de dirección y datos inválidos para evitar lecturas corruptas o errores silenciosos.
+  - Se limitaron los bytes leídos por campo en EEPROM y se agregó manejo para contenido que no venga en UTF-8.
+  - Se mejoró el manejo de errores al importar las funciones de impresora en la venta de pasaje, registrando el detalle en log y evitando continuar cuando no están disponibles.
 - v3.74:
-  - Se detectan 2 impresoras.
+  - Se agregó detección para 2 impresoras.
 - v3.73:
   - Se agregó un mensaje más claro e intuitivo cuando la impresora presenta algún error.
   - Se reorganizaron los íconos táctiles ubicados en la parte inferior de la interfaz para reducir problemas de uso en caso de fallas en el touch.
